@@ -47,7 +47,7 @@ wss.on('connection', (ws, req) => {
     console.log(`Message from ${deviceId}:`, decodedMessage);
 
     // Broadcast message to all connected clients
-    const broadcastData = JSON.stringify({ deviceId, message: decodedMessage });
+    const broadcastData = JSON.stringify({ deviceId, message: "I got your message " });
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(broadcastData);
