@@ -24,19 +24,21 @@
         };
 ws.onmessage = (event) => {
     let data;
-    
-    // Check if the message is a buffer and decode it
-    if (event.data instanceof ArrayBuffer) {
-        const decoder = new TextDecoder('utf-8');
-        data = JSON.parse(decoder.decode(event.data));
-    } else {
-        // Otherwise, treat it as a string
+
+    // Handle case if the message is a stringified JSON object
+    try {
         data = JSON.parse(event.data);
+        if (data.message && typeof data.message === 'string') {
+            data.message = JSON.parse(data.message);  // Decode nested JSON if necessary
+        }
+    } catch (e) {
+        console.log('Error parsing incoming message:', e);
     }
 
     logDiv.innerHTML += `<div class="message"><span class="device-id">${data.deviceId}:</span> ${data.message}</div>`;
     logDiv.scrollTop = logDiv.scrollHeight;  // Auto-scroll to latest message
 };
+
 
 
         ws.onclose = () => {
