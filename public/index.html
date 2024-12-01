@@ -17,7 +17,7 @@
     <div id="log"></div>
     <script>
         const logDiv = document.getElementById('log');
-        const ws = new WebSocket('wss://your-render-app-url.onrender.com');  // Replace with your Render URL
+        const ws = new WebSocket('wss://esp32-websocket-server.onrender.com');  // Replace with your Render URL
 
         ws.onopen = () => {
             logDiv.innerHTML += '<p class="message">Connected to WebSocket server</p>';
