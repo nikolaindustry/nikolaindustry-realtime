@@ -1,48 +1,45 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const path = require('path');
 
-// Setup Express
 const app = express();
-const port = process.env.PORT || 3000;  // Use Render's assigned port or default to 3000
+const port = process.env.PORT || 3000;
 
-// Create HTTP server and WebSocket instance
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// Store connected devices with unique IDs
-const devices = new Map();
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Handle HTTP connection before upgrade
-app.get('/connect', (req, res) => {
-    res.send('WebSocket endpoint available'); // Basic endpoint message
-});
-
-// Handle WebSocket connection upgrades
 wss.on('connection', (ws, req) => {
     const params = new URLSearchParams(req.url.split('?')[1]);
     const deviceId = params.get('id');
 
     if (!deviceId) {
-        ws.close();  // Close connection if no ID is provided
+        ws.close();
         return;
     }
 
-    devices.set(deviceId, ws);
     console.log(`Device ${deviceId} connected`);
 
     ws.on('message', (message) => {
         console.log(`Message from ${deviceId}: ${message}`);
-        ws.send(`Server received: ${message}`);
+        
+        // Broadcast message to all connected clients
+        const broadcastData = JSON.stringify({ deviceId, message });
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(broadcastData);
+            }
+        });
     });
 
     ws.on('close', () => {
-        devices.delete(deviceId);
         console.log(`Device ${deviceId} disconnected`);
     });
 });
 
-// Start server
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
