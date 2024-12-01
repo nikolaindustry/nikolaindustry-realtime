@@ -23,17 +23,25 @@ wss.on('connection', (ws, req) => {
 
     console.log(`Device ${deviceId} connected`);
     
-ws.on('message', (message) => {
-    let decodedMessage = message;
+ ws.on('message', (message) => {
+    let decodedMessage;
 
-    // Check if the message is a stringified JSON object
     try {
-        const parsedMessage = JSON.parse(message);
-        if (parsedMessage.message) {
-            decodedMessage = JSON.parse(parsedMessage.message); // Decode nested JSON if it exists
+        // Convert buffer to string if necessary
+        if (Buffer.isBuffer(message)) {
+            message = message.toString();
+        }
+
+        // Parse JSON message
+        decodedMessage = JSON.parse(message);
+        
+        // Handle nested JSON if needed
+        if (typeof decodedMessage === 'object' && decodedMessage.type === 'Buffer' && decodedMessage.data) {
+            decodedMessage = Buffer.from(decodedMessage.data).toString();
         }
     } catch (e) {
-        console.log('Error parsing message:', e);
+        console.error('Error parsing message:', e);
+        return;
     }
 
     console.log(`Message from ${deviceId}:`, decodedMessage);
@@ -46,6 +54,7 @@ ws.on('message', (message) => {
         }
     });
 });
+
 
 
     ws.on('close', () => {
