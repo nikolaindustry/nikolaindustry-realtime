@@ -4,47 +4,42 @@ const WebSocket = require('ws');
 
 // Setup Express
 const app = express();
-const port = 3000;  // HTTP server port
+const port = process.env.PORT || 3000;  // Use Render's assigned port or default to 3000
 
-// Create HTTP server and pass it to WebSocket
+// Create HTTP server and WebSocket instance
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ noServer: true });
+const wss = new WebSocket.Server({ server });
 
-// Store connected devices using their unique IDs
+// Store connected devices with unique IDs
 const devices = new Map();
 
-// Route to handle HTTP request before upgrading
+// Handle HTTP connection before upgrade
 app.get('/connect', (req, res) => {
-    // Extract device ID from query parameters
-    const deviceId = req.query.id;
+    res.send('WebSocket endpoint available'); // Basic endpoint message
+});
+
+// Handle WebSocket connection upgrades
+wss.on('connection', (ws, req) => {
+    const params = new URLSearchParams(req.url.split('?')[1]);
+    const deviceId = params.get('id');
 
     if (!deviceId) {
-        return res.status(400).send('Device ID is required');
+        ws.close();  // Close connection if no ID is provided
+        return;
     }
 
-    // Upgrade to WebSocket connection
-    server.on('upgrade', (request, socket, head) => {
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            ws.deviceId = deviceId;  // Attach ID to WebSocket instance
-            devices.set(deviceId, ws);
-            console.log(`Device ${deviceId} connected`);
+    devices.set(deviceId, ws);
+    console.log(`Device ${deviceId} connected`);
 
-            ws.on('message', (message) => {
-                console.log(`Message from ${deviceId}: ${message}`);
-
-                // Echo back message or handle routing logic here
-                ws.send(`Server received: ${message}`);
-            });
-
-            ws.on('close', () => {
-                devices.delete(deviceId);
-                console.log(`Device ${deviceId} disconnected`);
-            });
-        });
+    ws.on('message', (message) => {
+        console.log(`Message from ${deviceId}: ${message}`);
+        ws.send(`Server received: ${message}`);
     });
 
-    // Respond to HTTP request before upgrading
-    res.status(101).send('Switching protocols');
+    ws.on('close', () => {
+        devices.delete(deviceId);
+        console.log(`Device ${deviceId} disconnected`);
+    });
 });
 
 // Start server
