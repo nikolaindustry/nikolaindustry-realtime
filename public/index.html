@@ -22,12 +22,22 @@
         ws.onopen = () => {
             logDiv.innerHTML += '<p class="message">Connected to WebSocket server</p>';
         };
+ws.onmessage = (event) => {
+    let data;
+    
+    // Check if the message is a buffer and decode it
+    if (event.data instanceof ArrayBuffer) {
+        const decoder = new TextDecoder('utf-8');
+        data = JSON.parse(decoder.decode(event.data));
+    } else {
+        // Otherwise, treat it as a string
+        data = JSON.parse(event.data);
+    }
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            logDiv.innerHTML += `<div class="message"><span class="device-id">${data.deviceId}:</span> ${data.message}</div>`;
-            logDiv.scrollTop = logDiv.scrollHeight;  // Auto-scroll to latest message
-        };
+    logDiv.innerHTML += `<div class="message"><span class="device-id">${data.deviceId}:</span> ${data.message}</div>`;
+    logDiv.scrollTop = logDiv.scrollHeight;  // Auto-scroll to latest message
+};
+
 
         ws.onclose = () => {
             logDiv.innerHTML += '<p class="message">Disconnected from WebSocket server</p>';
