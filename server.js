@@ -12,6 +12,9 @@ const wss = new WebSocket.Server({ server });
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Store connected devices in a Map
+const devices = new Map();
+
 wss.on('connection', (ws, req) => {
     const params = new URLSearchParams(req.url.split('?')[1]);
     const deviceId = params.get('id');
@@ -22,44 +25,50 @@ wss.on('connection', (ws, req) => {
     }
 
     console.log(`Device ${deviceId} connected`);
-    
- ws.on('message', (message) => {
-    let decodedMessage;
+    devices.set(deviceId, ws); // Store the connection
 
-    try {
-        // Convert buffer to string if necessary
-        if (Buffer.isBuffer(message)) {
-            message = message.toString();
+    ws.on('message', (message) => {
+        let decodedMessage;
+
+        try {
+            // Convert buffer to string if necessary
+            if (Buffer.isBuffer(message)) {
+                message = message.toString();
+            }
+            decodedMessage = JSON.parse(message);
+        } catch (e) {
+            console.error('Error parsing message:', e);
+            return;
         }
 
-        // Parse JSON message
-        decodedMessage = JSON.parse(message);
-        
-        // Handle nested JSON if needed
-        if (typeof decodedMessage === 'object' && decodedMessage.type === 'Buffer' && decodedMessage.data) {
-            decodedMessage = Buffer.from(decodedMessage.data).toString();
-        }
-    } catch (e) {
-        console.error('Error parsing message:', e);
-        return;
-    }
+        console.log(`Message from ${deviceId}:`, decodedMessage);
 
-    console.log(`Message from ${deviceId}:`, decodedMessage);
-
-    // Broadcast message to all connected clients
-    const broadcastData = JSON.stringify({ deviceId, message: "I got your message " });
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(broadcastData);
-        }
+        // Example response to the same device
+        const response = JSON.stringify({ message: "I got your message" });
+        ws.send(response);
     });
-});
-
-
 
     ws.on('close', () => {
         console.log(`Device ${deviceId} disconnected`);
+        devices.delete(deviceId); // Remove the connection
     });
+});
+
+// Admin endpoint to send messages to a specific device
+app.get('/send', (req, res) => {
+    const { targetId, message } = req.query;
+
+    if (devices.has(targetId)) {
+        const targetSocket = devices.get(targetId);
+        if (targetSocket.readyState === WebSocket.OPEN) {
+            targetSocket.send(JSON.stringify({ from: "admin", message }));
+            res.send(`Message sent to device ${targetId}`);
+        } else {
+            res.status(500).send(`Device ${targetId} is not connected`);
+        }
+    } else {
+        res.status(404).send(`Device ${targetId} not found`);
+    }
 });
 
 server.listen(port, () => {
