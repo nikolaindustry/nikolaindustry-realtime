@@ -23,17 +23,20 @@ wss.on('connection', (ws, req) => {
 
     console.log(`Device ${deviceId} connected`);
 
-    ws.on('message', (message) => {
-        console.log(`Message from ${deviceId}: ${message}`);
-        
-        // Broadcast message to all connected clients
-        const broadcastData = JSON.stringify({ deviceId, message });
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(broadcastData);
-            }
-        });
+ws.on('message', (message) => {
+    // Assuming the incoming message is a buffer, parse it
+    const decodedMessage = message.toString('utf8');
+    console.log(`Message from ${deviceId}: ${decodedMessage}`);
+
+    // Broadcast message to all connected clients
+    const broadcastData = JSON.stringify({ deviceId, message: decodedMessage });
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(broadcastData);
+        }
     });
+});
+
 
     ws.on('close', () => {
         console.log(`Device ${deviceId} disconnected`);
