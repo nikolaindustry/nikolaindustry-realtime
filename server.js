@@ -22,11 +22,20 @@ wss.on('connection', (ws, req) => {
     }
 
     console.log(`Device ${deviceId} connected`);
-
 ws.on('message', (message) => {
-    // Assuming the incoming message is a buffer, parse it
-    const decodedMessage = message.toString('utf8');
-    console.log(`Message from ${deviceId}: ${decodedMessage}`);
+    let decodedMessage = message;
+
+    // Check if the message is a stringified JSON object
+    try {
+        const parsedMessage = JSON.parse(message);
+        if (parsedMessage.message) {
+            decodedMessage = JSON.parse(parsedMessage.message); // Decode nested JSON if it exists
+        }
+    } catch (e) {
+        console.log('Error parsing message:', e);
+    }
+
+    console.log(`Message from ${deviceId}:`, decodedMessage);
 
     // Broadcast message to all connected clients
     const broadcastData = JSON.stringify({ deviceId, message: decodedMessage });
