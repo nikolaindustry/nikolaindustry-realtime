@@ -58,8 +58,8 @@ wss.on('connection', (ws, req) => {
 app.get('/send', (req, res) => {
     const { deviceid, message } = req.query;
 
-    if (devices.has(targetId)) {
-        const targetSocket = devices.get(targetId);
+    if (devices.has(deviceid)) {
+        const targetSocket = devices.get(deviceid);
         if (targetSocket.readyState === WebSocket.OPEN) {
             targetSocket.send(JSON.stringify({ from: "admin", message }));
             res.send(`Message sent to device ${targetId}`);
