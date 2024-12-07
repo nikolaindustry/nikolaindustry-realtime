@@ -56,7 +56,7 @@ wss.on('connection', (ws, req) => {
 
 // Admin endpoint to send messages to a specific device
 app.get('/send', (req, res) => {
-    const { targetId, message } = req.query;
+    const { deviceid, message } = req.query;
 
     if (devices.has(targetId)) {
         const targetSocket = devices.get(targetId);
