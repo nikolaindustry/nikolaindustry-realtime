@@ -62,12 +62,12 @@ app.get('/send', (req, res) => {
         const targetSocket = devices.get(deviceid);
         if (targetSocket.readyState === WebSocket.OPEN) {
             targetSocket.send(JSON.stringify({ from: "admin", message }));
-            res.send(`Message sent to device ${targetId}`);
+            res.send(`Message sent to device ${deviceid}`);
         } else {
-            res.status(500).send(`Device ${targetId} is not connected`);
+            res.status(500).send(`Device ${deviceid} is not connected`);
         }
     } else {
-        res.status(404).send(`Device ${targetId} not found`);
+        res.status(404).send(`Device ${deviceid} not found`);
     }
 });
 
