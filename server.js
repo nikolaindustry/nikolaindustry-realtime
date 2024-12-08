@@ -43,9 +43,22 @@ wss.on('connection', (ws, req) => {
 
         console.log(`Message from ${deviceId}:`, decodedMessage);
 
-        // Example response to the same device
-        const response = JSON.stringify({ message: "I got your message" });
-        ws.send(response);
+        // Check if the message includes a target device ID
+        const { targetId, payload } = decodedMessage;
+
+        if (targetId && devices.has(targetId)) {
+            const targetSocket = devices.get(targetId);
+            if (targetSocket.readyState === WebSocket.OPEN) {
+                targetSocket.send(JSON.stringify({ from: deviceId, payload }));
+                console.log(`Message forwarded from ${deviceId} to ${targetId}`);
+            } else {
+                console.error(`Target device ${targetId} is not connected.`);
+            }
+        } else {
+            // Respond to the same device if no targetId is specified
+            const response = JSON.stringify({ message: "I got your message" });
+            ws.send(response);
+        }
     });
 
     ws.on('close', () => {
