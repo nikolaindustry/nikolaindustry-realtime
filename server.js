@@ -46,11 +46,19 @@ wss.on('connection', (ws, req) => {
         const { type, targetId, payload } = decodedMessage;
 
         // Handle API to get connected devices
-        if (type === 'getConnectedDevices') {
-            const connectedDevices = Array.from(devices.keys());
-            ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
-            console.log(`Sent connected devices to ${deviceId}`);
-        } else if (targetId && devices.has(targetId)) {
+    if (type === 'getConnectedDevices') {
+    const connectedDevices = Array.from(devices.entries()).map(([id, data]) => ({
+        id,
+        ip: data.ip,
+        connectedAt: data.connectedAt,
+        lastActive: data.lastActive,
+        metadata: data.metadata,
+    }));
+
+    ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
+    console.log(`Sent detailed connected devices info to ${deviceId}`);
+}
+ else if (targetId && devices.has(targetId)) {
             const targetSocket = devices.get(targetId);
             if (targetSocket.readyState === WebSocket.OPEN) {
                 targetSocket.send(JSON.stringify({ from: deviceId, payload }));
