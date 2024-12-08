@@ -27,38 +27,39 @@ wss.on('connection', (ws, req) => {
     console.log(`Device ${deviceId} connected`);
     devices.set(deviceId, ws); // Store the connection
 
-ws.on('message', (message) => {
-    let decodedMessage;
+    ws.on('message', (message) => {
+        let decodedMessage;
 
-    try {
-        if (typeof message === 'string') {
-            decodedMessage = JSON.parse(message.trim());
-        } else {
-            throw new Error("Message is not a valid JSON string");
+        try {
+            // Convert buffer to string if necessary
+            if (Buffer.isBuffer(message)) {
+                message = message.toString();
+            }
+            decodedMessage = JSON.parse(message);
+        } catch (e) {
+            console.error('Error parsing message:', e);
+            return;
         }
-    } catch (e) {
-        console.error('Error parsing message:', e.message);
-        return;
-    }
 
-    console.log(`Message from ${deviceId}:`, decodedMessage);
+        console.log(`Message from ${deviceId}:`, decodedMessage);
 
-    const { targetId, payload } = decodedMessage;
+        // Check if the message includes a target device ID
+        const { targetId, payload } = decodedMessage;
 
-    if (targetId && devices.has(targetId)) {
-        const targetSocket = devices.get(targetId);
-        if (targetSocket.readyState === WebSocket.OPEN) {
-            targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-            console.log(`Message forwarded from ${deviceId} to ${targetId}`);
+        if (targetId && devices.has(targetId)) {
+            const targetSocket = devices.get(targetId);
+            if (targetSocket.readyState === WebSocket.OPEN) {
+                targetSocket.send(JSON.stringify({ from: deviceId, payload }));
+                console.log(`Message forwarded from ${deviceId} to ${targetId}`);
+            } else {
+                console.error(`Target device ${targetId} is not connected.`);
+            }
         } else {
-            console.error(`Target device ${targetId} is not connected.`);
+            // Respond to the same device if no targetId is specified
+            const response = JSON.stringify({ message: "I got your message" });
+            ws.send(response);
         }
-    } else {
-        const response = JSON.stringify({ message: "I got your message" });
-        ws.send(response);
-    }
-});
-
+    });
 
     ws.on('close', () => {
         console.log(`Device ${deviceId} disconnected`);
