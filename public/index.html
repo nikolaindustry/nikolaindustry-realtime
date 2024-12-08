@@ -3,47 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Device Monitor</title>
+    <title>NIKOLAINDUSTRY-NETWORK</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { text-align: center; }
-        #log { height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
-        .message { margin-bottom: 5px; padding: 5px; border-bottom: 1px solid #ddd; }
-        .device-id { font-weight: bold; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
-    <h1>ESP32 Device Monitor</h1>
-    <div id="log"></div>
-    <script>
-        const logDiv = document.getElementById('log');
-        const ws = new WebSocket('wss://esp32-websocket-server.onrender.com');  // Replace with your Render URL
-
-        ws.onopen = () => {
-            logDiv.innerHTML += '<p class="message">Connected to WebSocket server</p>';
-        };
-ws.onmessage = (event) => {
-    let data;
-
-    // Handle case if the message is a stringified JSON object
-    try {
-        data = JSON.parse(event.data);
-        if (data.message && typeof data.message === 'string') {
-            data.message = JSON.parse(data.message);  // Decode nested JSON if necessary
-        }
-    } catch (e) {
-        console.log('Error parsing incoming message:', e);
-    }
-
-    logDiv.innerHTML += `<div class="message"><span class="device-id">${data.deviceId}:</span> ${data.message}</div>`;
-    logDiv.scrollTop = logDiv.scrollHeight;  // Auto-scroll to latest message
-};
-
-
-
-        ws.onclose = () => {
-            logDiv.innerHTML += '<p class="message">Disconnected from WebSocket server</p>';
-        };
-    </script>
+    <iframe src="https://nikolaindustry.wixsite.com/nikolaindustry" title="Full-Screen Webpage"></iframe>
 </body>
 </html>
