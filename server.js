@@ -43,10 +43,14 @@ wss.on('connection', (ws, req) => {
 
         console.log(`Message from ${deviceId}:`, decodedMessage);
 
-        // Check if the message includes a target device ID
-        const { targetId, payload } = decodedMessage;
+        const { type, targetId, payload } = decodedMessage;
 
-        if (targetId && devices.has(targetId)) {
+        // Handle API to get connected devices
+        if (type === 'getConnectedDevices') {
+            const connectedDevices = Array.from(devices.keys());
+            ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
+            console.log(`Sent connected devices to ${deviceId}`);
+        } else if (targetId && devices.has(targetId)) {
             const targetSocket = devices.get(targetId);
             if (targetSocket.readyState === WebSocket.OPEN) {
                 targetSocket.send(JSON.stringify({ from: deviceId, payload }));
