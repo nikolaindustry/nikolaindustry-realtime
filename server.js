@@ -43,22 +43,29 @@ wss.on('connection', (ws, req) => {
 
         console.log(`Message from ${deviceId}:`, decodedMessage);
 
-        const { type, targetId, payload } = decodedMessage;
+        const { type, targetIds, targetId, payload } = decodedMessage;
 
         // Handle API to get connected devices
-    if (type === 'getConnectedDevices') {
-    const connectedDevices = Array.from(devices.entries()).map(([id, data]) => ({
-        id,
-        ip: data.ip,
-        connectedAt: data.connectedAt,
-        lastActive: data.lastActive,
-        metadata: data.metadata,
-    }));
-
-    ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
-    console.log(`Sent detailed connected devices info to ${deviceId}`);
-}
- else if (targetId && devices.has(targetId)) {
+        if (type === 'getConnectedDevices') {
+            const connectedDevices = Array.from(devices.keys());
+            ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
+            console.log(`Sent connected devices list to ${deviceId}`);
+        } else if (Array.isArray(targetIds)) {
+            // Handle multiple target IDs
+            targetIds.forEach((id) => {
+                if (devices.has(id)) {
+                    const targetSocket = devices.get(id);
+                    if (targetSocket.readyState === WebSocket.OPEN) {
+                        targetSocket.send(JSON.stringify({ from: deviceId, payload }));
+                        console.log(`Message forwarded from ${deviceId} to ${id}`);
+                    } else {
+                        console.error(`Target device ${id} is not connected.`);
+                    }
+                } else {
+                    console.error(`Target device ${id} is not found.`);
+                }
+            });
+        } else if (targetId && devices.has(targetId)) {
             const targetSocket = devices.get(targetId);
             if (targetSocket.readyState === WebSocket.OPEN) {
                 targetSocket.send(JSON.stringify({ from: deviceId, payload }));
@@ -79,21 +86,31 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-// Admin endpoint to send messages to a specific device
+// Admin endpoint to send messages to multiple devices
 app.get('/send', (req, res) => {
-    const { deviceid, message } = req.query;
+    const { deviceIds, message } = req.query;
 
-    if (devices.has(deviceid)) {
-        const targetSocket = devices.get(deviceid);
-        if (targetSocket.readyState === WebSocket.OPEN) {
-            targetSocket.send(JSON.stringify({ from: "admin", message }));
-            res.send(`Message sent to device ${deviceid}`);
-        } else {
-            res.status(500).send(`Device ${deviceid} is not connected`);
-        }
-    } else {
-        res.status(404).send(`Device ${deviceid} not found`);
+    if (!deviceIds) {
+        res.status(400).send('Device IDs are required');
+        return;
     }
+
+    const ids = deviceIds.split(',');
+    ids.forEach((id) => {
+        if (devices.has(id)) {
+            const targetSocket = devices.get(id);
+            if (targetSocket.readyState === WebSocket.OPEN) {
+                targetSocket.send(JSON.stringify({ from: "admin", message }));
+                console.log(`Message sent to device ${id}`);
+            } else {
+                console.error(`Device ${id} is not connected.`);
+            }
+        } else {
+            console.error(`Device ${id} not found.`);
+        }
+    });
+
+    res.send(`Message sent to devices: ${ids.join(', ')}`);
 });
 
 server.listen(port, () => {
