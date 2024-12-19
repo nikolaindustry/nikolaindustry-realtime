@@ -371,6 +371,90 @@ This document provides a detailed reference for implementing a robust IoT automa
 5. Clearly document all supported `actions` and `error_code` types.
 6. Modularize actions to add new commands easily.
 
+### **JSON ** 
+```json
+{
+  "CoreMessageTerminologies": {
+    "device_id": "Unique identifier for the target device (e.g., ESP32).",
+    "action": "Operation the system needs to perform (e.g., control_gpio, schedule_task).",
+    "timestamp": "ISO 8601 format time for synchronization or logs.",
+    "payload": "Main content/parameters for the action.",
+    "status": "Response status from the server/device (e.g., success, error).",
+    "message": "Descriptive information about the status or errors.",
+    "version": "Protocol or API version used for backward compatibility."
+  },
+  "Actions": {
+    "control_gpio": "Control a GPIO pin (e.g., ON/OFF, HIGH/LOW).",
+    "schedule_task": "Schedule a task for a future time or duration.",
+    "blink_gpio": "Toggle GPIO at a specified frequency.",
+    "get_sensor_data": "Retrieve data from sensors (e.g., temperature, humidity).",
+    "ack": "Acknowledge a received command.",
+    "error": "Report an error for a failed operation.",
+    "relay_message": "Send a message to another client/device.",
+    "update_firmware": "Initiate a firmware update for the device."
+  },
+  "PayloadParameters": {
+    "pin": "Target GPIO pin number.",
+    "state": "Current or desired GPIO state (e.g., HIGH, LOW).",
+    "frequency": "Frequency for PWM or blinking in Hertz (Hz).",
+    "duty_cycle": "Percentage of ON-time for PWM signals (0-100).",
+    "duration": "Time in seconds for an operation to run.",
+    "schedule": "Contains scheduling details (e.g., start_time, duration).",
+    "sensor_type": "Type of sensor to query (e.g., temperature, humidity).",
+    "value": "Resulting value from a sensor read or operation."
+  },
+  "ErrorCodes": {
+    "GPIO_NOT_AVAILABLE": "Target GPIO pin is already in use or unavailable.",
+    "INVALID_ACTION": "Unrecognized action provided in the request.",
+    "INVALID_PIN": "Pin number provided is not valid for the device.",
+    "INVALID_STATE": "Invalid state for a GPIO operation (e.g., non-HIGH/LOW).",
+    "DEVICE_NOT_CONNECTED": "Target device is offline or not reachable.",
+    "ACTION_TIMEOUT": "Action exceeded the allowed time to complete.",
+    "PAYLOAD_MISSING": "Required fields in the payload are not provided.",
+    "PERMISSION_DENIED": "User is unauthorized to perform the requested action.",
+    "SENSOR_ERROR": "Failed to read data from the requested sensor.",
+    "FIRMWARE_UPDATE_FAILED": "Firmware update could not be completed."
+  },
+  "ResponseStatus": {
+    "success": "Indicates the operation was successful.",
+    "failure": "Indicates the operation failed.",
+    "processing": "Indicates the action is still in progress.",
+    "queued": "Indicates the action has been queued."
+  },
+  "DeviceSpecificParameters": {
+    "device_type": "Type of device (e.g., ESP32, RaspberryPi).",
+    "device_status": "Operational status (online, offline, error).",
+    "battery_level": "Device battery status as a percentage (if applicable).",
+    "firmware_version": "Version of the current firmware."
+  },
+  "AuthenticationAndSecurity": {
+    "access_token": "Token for authenticating clients/devices.",
+    "user_id": "Identifier for the user initiating the action.",
+    "session_id": "Identifier for the current client session.",
+    "role": "Role-based permission level (e.g., admin, user)."
+  },
+  "LoggingAndMonitoring": {
+    "event_type": "Type of event being logged (e.g., command_received).",
+    "event_id": "Unique identifier for tracking a specific event.",
+    "log_level": "Severity of the log (e.g., info, warning, error).",
+    "latency": "Time taken for an operation to complete (in milliseconds)."
+  },
+  "SchedulingParameters": {
+    "start_time": "Start time for scheduled operations (ISO 8601).",
+    "repeat": "Repeat frequency for recurring tasks.",
+    "end_time": "Optional parameter to define task expiration."
+  },
+  "QualityOfService": {
+    "priority": "Priority level of the action (high, low).",
+    "retries": "Number of times to retry the action on failure.",
+    "timeout": "Time in seconds after which an action times out."
+  }
+}
+
+
+```
+---
+
 
 
 
