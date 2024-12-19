@@ -371,7 +371,8 @@ This document provides a detailed reference for implementing a robust IoT automa
 5. Clearly document all supported `actions` and `error_code` types.
 6. Modularize actions to add new commands easily.
 
-### **JSON ** 
+---
+### **8. JSON** 
 ```json
 {
   "CoreMessageTerminologies": {
