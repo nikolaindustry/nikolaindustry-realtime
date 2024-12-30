@@ -49,7 +49,7 @@ wss.on('connection', (ws, req) => {
 
         console.log(`Message from ${deviceId}:`, decodedMessage);
 
-        const { type, targetIds, targetId, payload } = decodedMessage;
+        const { type, targetIds, targetId, controlid, payload } = decodedMessage;
 
         if (type === 'getConnectedDevices') {
             const connectedDevices = Array.from(devices.keys());
@@ -60,7 +60,7 @@ wss.on('connection', (ws, req) => {
             const connections = devices.get(deviceId);
             connections.forEach((conn) => {
                 if (conn.readyState === WebSocket.OPEN) {
-                    conn.send(JSON.stringify({ from: deviceId, payload }));
+                    conn.send(JSON.stringify({ from: deviceId,controlid, payload }));
                     console.log(`Broadcast message from ${deviceId}`);
                 }
             });
