@@ -38,10 +38,7 @@ const unsigned long pingInterval = 50000;  // 50 seconds
 
 void setup() {
   Serial.begin(115200);
-
   getcredentials();
-  initializeWebSocket();
-
   // Start in STA mode if credentials are available; otherwise, start in AP mode
   if (!ssid.isEmpty() && !password.isEmpty()) {
     connectToWiFi();
@@ -55,6 +52,7 @@ void setup() {
   server.on("/setwifi", HTTP_GET, handleSetWiFi);
   server.on("/clearwifi", HTTP_GET, clearConfig);
   server.begin();
+  initializeWebSocket();
 }
 
 unsigned long lastReconnectAttempt = 0;
@@ -75,8 +73,9 @@ void loop() {
         lastReconnectAttempt = now;
 
         Serial.println("Attempting to reconnect to WiFi...");
-        WiFi.disconnect();
+        //WiFi.disconnect();
         WiFi.begin(ssid.c_str(), password.c_str());
+        delay(100);
         Serial.println(ssid);
         Serial.println(password);
         retryCount++;
@@ -109,20 +108,21 @@ void getcredentials() {
   userid = preferences.getString("userid", "");
   deviceid = preferences.getString("deviceid", "5txey73xdf");
   preferences.end();
-  delay(50);
 }
 
 
 void initializeWebSocket() {
 
   if (!ssid.isEmpty() && !password.isEmpty() && !deviceid.isEmpty()) {
-    // if (deviceid.isEmpty()) {
-    //     Serial.println("Device ID is empty, WebSocket path not set.");
-    //     return;
-    // }
-    String websocket_path_str = "/connect?id=" + deviceid;
-    webSocket.beginSSL(websocket_server_host, websocket_port, websocket_path_str.c_str());  // Use SSL for wss
-    webSocket.onEvent(webSocketEvent);                                                      // Define event handler
+    if (WiFi.status() == WL_CONNECTED) {
+
+      String websocket_path_str = "/connect?id=" + deviceid;
+      webSocket.beginSSL(websocket_server_host, websocket_port, websocket_path_str.c_str());  // Use SSL for wss
+      webSocket.onEvent(webSocketEvent);
+    } else {
+      Serial.println("WiFi not connected, skipping WebSocket initialization.");
+    }
+    // Define event handler
 
   } else {
     Serial.println("Device_id Not Found");
@@ -132,9 +132,13 @@ void initializeWebSocket() {
 
 // Function to send messages
 void sendMessage(const char* message) {
-  webSocket.sendTXT(message);
+  if (!webSocket.sendTXT(message)) {
+    Serial.println("Failed to send WebSocket message.");
+}else{
   Serial.print("Sent: ");
   Serial.println(message);
+}
+
 }
 
 
@@ -219,6 +223,7 @@ void connectToWiFi() {
   WiFi.setHostname(customHostname);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid.c_str(), password.c_str());
+  delay(100);
   Serial.println("Connecting to WiFi...");
 
   unsigned long startAttemptTime = millis();
@@ -230,6 +235,7 @@ void connectToWiFi() {
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi connected! IP Address: " + WiFi.localIP().toString());
+    initializeWebSocket();
   } else {
     Serial.println("\nConnection timed out. Switching to AP mode.");
     startAPMode();
