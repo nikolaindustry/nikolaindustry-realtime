@@ -118,6 +118,7 @@ void getcredentials() {
   deviceid = preferences.getString("deviceid", "");
   productid = preferences.getString("productid", "");
   firstimecall = preferences.getString("APICALL", "");
+  macid = WiFi.macAddress();
   Serial.println(ssid);
   Serial.println(password);
   Serial.println(deviceid);
@@ -275,7 +276,7 @@ void connectToWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi connected! IP Address: " + WiFi.localIP().toString());
     if (firstimecall == "true") {
-      String regiapi = "https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/product_registration?ssid=" + ssid + "&password=" + password + "&deviceid=" + deviceid + "&email=" + email + "&userid=" + userid + "&productid=" + productid;
+      String regiapi = "https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/product_registration?ssid=" + ssid + "&password=" + password + "&deviceid=" + deviceid + "&email=" + email + "&userid=" + userid + "&productid=" + productid + "&macid=" + macid;
       Serial.println(regiapi);
       HTTPClient http;
       http.begin(regiapi);           // Initialize with the URL
