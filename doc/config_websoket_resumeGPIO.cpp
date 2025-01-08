@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <Preferences.h>
@@ -13,7 +14,7 @@ WebServer server(80);
 DNSServer dnsServer;
 
 // Wi-Fi credentials
-String ssid, password, userid, deviceid, loaclip, macid;
+String ssid, password, userid, deviceid, productid, firstimecall, email, loaclip, macid;
 
 // Preferences for saving credentials
 Preferences preferences;
@@ -39,7 +40,7 @@ const unsigned long pingInterval = 50000;  // 50 seconds
 
 
 void setup() {
-  Serial.begin(115200);
+
   getcredentials();
   // Initialize GPIO Preferences
   gpioPreferences.begin("gpio-states", false);
@@ -83,6 +84,7 @@ void loop() {
         delay(100);
         Serial.println(ssid);
         Serial.println(password);
+        Serial.println(deviceid);
         retryCount++;
 
         if (retryCount >= maxRetries) {
@@ -107,11 +109,22 @@ void loop() {
 
 void getcredentials() {
   // Load stored Wi-Fi credentials
-  preferences.begin("wifi-creds", true);
+  Serial.begin(115200);
+  preferences.begin("wifi-creds", false);
   ssid = preferences.getString("ssid", "");
   password = preferences.getString("password", "");
   userid = preferences.getString("userid", "");
-  deviceid = preferences.getString("deviceid", "5txey73xdf");
+  email = preferences.getString("email", "");
+  deviceid = preferences.getString("deviceid", "");
+  productid = preferences.getString("productid", "");
+  firstimecall = preferences.getString("APICALL", "");
+  Serial.println(ssid);
+  Serial.println(password);
+  Serial.println(deviceid);
+  Serial.println(productid);
+  Serial.println(firstimecall);
+  Serial.println(userid);
+  Serial.println(email);
   preferences.end();
 }
 
@@ -165,6 +178,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
     case WStype_CONNECTED:
       Serial.println("WebSocket connected!");
+
       break;
 
     case WStype_TEXT:
@@ -260,6 +274,33 @@ void connectToWiFi() {
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi connected! IP Address: " + WiFi.localIP().toString());
+    if (firstimecall == "true") {
+      String regiapi = "https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/product_registration?ssid=" + ssid + "&password=" + password + "&deviceid=" + deviceid + "&email=" + email + "&userid=" + userid + "&productid=" + productid;
+      Serial.println(regiapi);
+      HTTPClient http;
+      http.begin(regiapi);           // Initialize with the URL
+      int httpGETCode = http.GET();  // Perform GET request without arguments
+      if (httpGETCode > 0) {
+        // HTTP response code > 0 means request was successful
+        String payload = http.getString();
+        Serial.println(httpGETCode);
+        Serial.println(payload);  // Log response payload
+
+        if (httpGETCode == 200) {
+          preferences.begin("wifi-creds", false);
+          preferences.putString("APICALL", "false");
+          firstimecall = preferences.getString("APICALL", "");
+          preferences.end();
+        }
+
+      } else {
+        // Handle request failure
+        Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpGETCode).c_str());
+      }
+      http.end();  // Close the HTTP connection
+    } else {
+      Serial.println("product already registred");
+    }
     initializeWebSocket();
   } else {
     Serial.println("\nConnection timed out. Switching to AP mode.");
@@ -310,7 +351,10 @@ void handleConfigSubmit() {
 
 void clearConfig() {
   preferences.begin("wifi-creds", false);
-  preferences.clear();
+  preferences.putString("ssid", "");
+  preferences.putString("password", "");
+  preferences.putString("userid", "");
+  preferences.putString("deviceid", "");
   preferences.end();
   server.send(200, "application/json", "{\"status\":\"cleared\",\"message\":\"WiFi credentials cleared. Restarting...\"}");
   delay(1000);
@@ -318,21 +362,44 @@ void clearConfig() {
 }
 
 void handleSetWiFi() {
-  if (WiFi.status() == WL_CONNECTED) {
-    server.send(200, "application/json", "{\"status\":\"connected\",\"message\":\"Already connected to WiFi.\"}");
-    return;
-  }
-  if (server.hasArg("ssid") && server.hasArg("password")) {
+  // if (WiFi.status() == WL_CONNECTED) {
+  //   server.send(200, "application/json", "{\"status\":\"connected\",\"message\":\"Already connected to WiFi.\"}");
+  //   return;
+  // }
+  if (server.hasArg("ssid") && server.hasArg("password") && server.hasArg("userid") && server.hasArg("deviceid") && server.hasArg("email") && server.hasArg("productid")) {
+
     ssid = server.arg("ssid");
     password = server.arg("password");
-    preferences.begin("wifi-creds", false);
-    preferences.putString("ssid", ssid);
-    preferences.putString("password", password);
-    preferences.end();
-    server.send(200, "application/json", "{\"status\":\"success\",\"message\":\"WiFi saved. Restarting...\"}");
-    delay(1000);
-    ESP.restart();
+    userid = server.arg("userid");
+    deviceid = server.arg("deviceid");
+    productid = server.arg("productid");
+    email = server.arg("email");
+
+    if (ssid.length() > 0 && password.length() > 0 && userid.length() > 0 && deviceid.length() > 0 && productid.length() > 0 && email.length() > 0) {
+      preferences.begin("wifi-creds", false);
+      preferences.putString("ssid", ssid);
+      preferences.putString("password", password);
+      preferences.putString("userid", userid);
+      preferences.putString("deviceid", deviceid);
+      preferences.putString("email", email);
+      preferences.putString("productid", productid);
+      preferences.putString("APICALL", "true");
+      preferences.end();
+      Serial.println("200");
+      server.send(200, "application/json", "{\"status\":\"success\",\"message\":\"WiFi saved. Restarting...\"}");
+
+
+      // WiFi.begin(ssid.c_str(), password.c_str());
+      delay(500);
+      ESP.restart();
+    }else {
+      server.send(404, "application/json", "{\"status\":\"missing\",\"message\":\"WiFi not saved.\"}");
+
+    }
+
   } else {
     server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"Missing parameters.\"}");
+    Serial.println("400");
+    delay(5000);
   }
 }
