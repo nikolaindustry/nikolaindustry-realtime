@@ -136,6 +136,33 @@ app.get('/send', (req, res) => {
     res.send(`Message sent to devices: ${ids.join(', ')}`);
 });
 
+
+function callApiRepeatedly() {
+    setInterval(async () => {
+        try {
+            const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=nikolaindustrynetwork'); // Replace with your API endpoint
+            console.log('API Response:', response.data);
+
+            // Example: Broadcast to all connected devices
+            // devices.forEach((connections, deviceId) => {
+            //     connections.forEach((conn) => {
+            //         if (conn.readyState === WebSocket.OPEN) {
+            //             conn.send(JSON.stringify({ type: 'apiUpdate', data: response.data }));
+            //             console.log(`API data sent to device ${deviceId}`);
+            //         }
+            //     });
+            // });
+        } catch (error) {
+            console.error('Error calling API:', error.message);
+        }
+    }, 60000); // Call every minute (60000ms)
+}
+
+
+// Start the repeated API calls
+callApiRepeatedly();
+
+
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
