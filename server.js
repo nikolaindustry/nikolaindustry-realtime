@@ -32,13 +32,12 @@ wss.on('connection', (ws, req) => {
         devices.set(deviceId, []);
     }
 
-    devices.get(deviceId).push(ws); // Add this connection to the list for the ID
+    devices.get(deviceId).push(ws);
 
     ws.on('message', (message) => {
         let decodedMessage;
 
         try {
-            // Convert buffer to string if necessary
             if (Buffer.isBuffer(message)) {
                 message = message.toString();
             }
@@ -57,7 +56,6 @@ wss.on('connection', (ws, req) => {
             ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
             console.log(`Sent connected devices list to ${deviceId}`);
         } else if (type === 'broadcast') {
-            // Send to all devices with the same ID
             const connections = devices.get(deviceId);
             connections.forEach((conn) => {
                 if (conn.readyState === WebSocket.OPEN) {
@@ -96,12 +94,10 @@ wss.on('connection', (ws, req) => {
     ws.on('close', () => {
         console.log(`Device ${deviceId} disconnected`);
 
-        // Remove the WebSocket connection from the array
         const connections = devices.get(deviceId) || [];
         const index = connections.indexOf(ws);
         if (index !== -1) connections.splice(index, 1);
 
-        // Remove the `id` if no connections remain
         if (connections.length === 0) {
             devices.delete(deviceId);
         } else {
@@ -110,38 +106,11 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-// Admin endpoint to send messages to multiple devices
-app.get('/send', (req, res) => {
-    const { deviceIds, message } = req.query;
-
-    if (!deviceIds) {
-        res.status(400).send('Device IDs are required');
-        return;
-    }
-
-    const ids = deviceIds.split(',');
-    ids.forEach((id) => {
-        if (devices.has(id)) {
-            const connections = devices.get(id);
-            connections.forEach((conn) => {
-                if (conn.readyState === WebSocket.OPEN) {
-                    conn.send(JSON.stringify({ from: "admin", message }));
-                    console.log(`Message sent to device ${id}`);
-                }
-            });
-        } else {
-            console.error(`Device ${id} not found.`);
-        }
-    });
-
-    res.send(`Message sent to devices: ${ids.join(', ')}`);
-});
-
-
+// Repeated API Call Function
 function callApiRepeatedly() {
     setInterval(async () => {
         try {
-            const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=nikolaindustrynetwork'); // Replace with your API endpoint
+            const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=222031154'); // Replace with your API endpoint
             console.log('API Response:', response.data);
 
             // Example: Broadcast to all connected devices
@@ -159,10 +128,8 @@ function callApiRepeatedly() {
     }, 60000); // Call every minute (60000ms)
 }
 
-
 // Start the repeated API calls
 callApiRepeatedly();
-
 
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
