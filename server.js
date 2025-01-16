@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
+const axios = require('axios');
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -109,8 +111,8 @@ wss.on('connection', (ws, req) => {
 function callApiRepeatedly() {
     setInterval(async () => {
         try {
-            // const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=222031154'); // Replace with your API endpoint
-            // console.log('API Response:', response.data);
+            const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=222031154'); // Replace with your API endpoint
+            console.log('API Response:', response.data);
 
             // Example: Broadcast to all connected devices
             // devices.forEach((connections, deviceId) => {
