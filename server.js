@@ -126,7 +126,7 @@ function callApiRepeatedly() {
         } catch (error) {
             console.error('Error calling API:', error.message);
         }
-    }, 60000); // Call every minute (60000ms)
+    }, 3600000); 
 }
 
 // Start the repeated API calls
