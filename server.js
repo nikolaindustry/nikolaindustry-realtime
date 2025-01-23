@@ -28,11 +28,10 @@ wss.on('connection', (ws, req) => {
 
     console.log(`Device ${deviceId} connected`);
 
-    // Ensure the `devices` map supports multiple connections per ID
+    // Ensure `devices` Map supports multiple connections per ID
     if (!devices.has(deviceId)) {
         devices.set(deviceId, []);
     }
-
     devices.get(deviceId).push(ws);
 
     ws.on('message', (message) => {
@@ -50,45 +49,34 @@ wss.on('connection', (ws, req) => {
 
         console.log(`Message from ${deviceId}:`, decodedMessage);
 
-        const { type, targetIds, targetId, payload } = decodedMessage;
+        const { type, targets } = decodedMessage;
 
         if (type === 'getConnectedDevices') {
+            // Return all connected device IDs
             const connectedDevices = Array.from(devices.keys());
             ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
             console.log(`Sent connected devices list to ${deviceId}`);
-        } else if (type === 'broadcast') {
-            const connections = devices.get(deviceId);
-            connections.forEach((conn) => {
-                if (conn.readyState === WebSocket.OPEN) {
-                    conn.send(JSON.stringify({ from: deviceId, payload }));
-                    console.log(`Broadcast message from ${deviceId}`);
-                }
-            });
-        } else if (Array.isArray(targetIds)) {
-            targetIds.forEach((id) => {
-                if (devices.has(id)) {
-                    const targets = devices.get(id);
-                    targets.forEach((targetSocket) => {
-                        if (targetSocket.readyState === WebSocket.OPEN) {
-                            targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-                            console.log(`Message forwarded from ${deviceId} to ${id}`);
-                        }
-                    });
-                } else {
-                    console.error(`Target device ${id} is not found.`);
-                }
-            });
-        } else if (targetId && devices.has(targetId)) {
-            const targets = devices.get(targetId);
-            targets.forEach((targetSocket) => {
-                if (targetSocket.readyState === WebSocket.OPEN) {
-                    targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-                    console.log(`Message forwarded from ${deviceId} to ${targetId}`);
-                }
-            });
+        } else if (type === 'multiMessage') {
+            if (Array.isArray(targets)) {
+                targets.forEach(({ id, payload }) => {
+                    if (devices.has(id)) {
+                        devices.get(id).forEach((targetSocket) => {
+                            if (targetSocket.readyState === WebSocket.OPEN) {
+                                targetSocket.send(
+                                    JSON.stringify({ from: deviceId, ...payload })
+                                );
+                                console.log(`Message sent from ${deviceId} to ${id}`);
+                            }
+                        });
+                    } else {
+                        console.error(`Target device ${id} not found.`);
+                    }
+                });
+            } else {
+                console.error('Invalid `targets` format. Must be an array.');
+            }
         } else {
-            const response = JSON.stringify({ message: "I got your message" });
-            ws.send(response);
+            console.error('Unsupported message type:', type);
         }
     });
 
@@ -111,8 +99,8 @@ wss.on('connection', (ws, req) => {
 function callApiRepeatedly() {
     setInterval(async () => {
         try {
-            const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=222031154'); // Replace with your API endpoint
-            console.log('API Response:', response.data);
+            //const response = await axios.get('https://nikolaindustry.wixstudio.com/librarymanagment/_functions/getassignedbooks?src=222031154'); // Replace with your API endpoint
+            //console.log('API Response:', response.data);
 
             // Example: Broadcast to all connected devices
             // devices.forEach((connections, deviceId) => {
