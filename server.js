@@ -48,7 +48,8 @@ wss.on('connection', (ws, req) => {
             return;
         }
 
-       console.log(`Message from ${deviceId}:, ${decodedMessage}`);
+       console.log(`Message from ${deviceId}:`);
+        console.log(decodedMessage);
 
         const { type, targetIds, targetId, payload } = decodedMessage;
 
