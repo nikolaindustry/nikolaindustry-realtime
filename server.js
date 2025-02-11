@@ -75,7 +75,7 @@ wss.on('connection', (ws, req) => {
                         }
                     });
                 } else {
-                    console.error(Target device ${id} is not found.);
+                   // console.error(Target device ${id} is not found.);
                 }
             });
         } else if (targetId && devices.has(targetId)) {
@@ -125,5 +125,5 @@ function callApiRepeatedly() {
 callApiRepeatedly();
 
 server.listen(port, () => {
-    console.log(Server running on port ${port});
+  //  console.log(Server running on port ${port});
 });
