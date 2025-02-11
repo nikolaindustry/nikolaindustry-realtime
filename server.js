@@ -26,7 +26,7 @@ wss.on('connection', (ws, req) => {
         return;
     }
 
-   console.log(Device ${deviceId} connected);
+   console.log(`Device ${deviceId} connected`);
 
     // Ensure the devices map supports multiple connections per ID
     if (!devices.has(deviceId)) {
@@ -48,20 +48,20 @@ wss.on('connection', (ws, req) => {
             return;
         }
 
-      //  console.log(Message from ${deviceId}:, decodedMessage);
+       console.log(`Message from ${deviceId}:, decodedMessage`);
 
         const { type, targetIds, targetId, payload } = decodedMessage;
 
         if (type === 'getConnectedDevices') {
             const connectedDevices = Array.from(devices.keys());
             ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
-           // console.log(Sent connected devices list to ${deviceId});
+            console.log(`Sent connected devices list to ${deviceId}`);
         } else if (type === 'broadcast') {
             const connections = devices.get(deviceId);
             connections.forEach((conn) => {
                 if (conn.readyState === WebSocket.OPEN) {
                     conn.send(JSON.stringify({ from: deviceId, payload }));
-                    //console.log(Broadcast message from ${deviceId});
+                    console.log(`Broadcast message from ${deviceId}`);
                 }
             });
         } else if (Array.isArray(targetIds)) {
@@ -71,11 +71,11 @@ wss.on('connection', (ws, req) => {
                     targets.forEach((targetSocket) => {
                         if (targetSocket.readyState === WebSocket.OPEN) {
                             targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-                            //console.log(Message forwarded from ${deviceId} to ${id});
+                            console.log(`Message forwarded from ${deviceId} to ${id}`);
                         }
                     });
                 } else {
-                   // console.error(Target device ${id} is not found.);
+                   console.error(`Target device ${id} is not found.`);
                 }
             });
         } else if (targetId && devices.has(targetId)) {
@@ -83,7 +83,7 @@ wss.on('connection', (ws, req) => {
             targets.forEach((targetSocket) => {
                 if (targetSocket.readyState === WebSocket.OPEN) {
                     targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-                   // console.log(Message forwarded from ${deviceId} to ${targetId});
+                    console.log(`Message forwarded from ${deviceId} to ${targetId}`);
                 }
             });
         } else {
@@ -93,7 +93,7 @@ wss.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
-       // console.log(Device ${deviceId} disconnected);
+        console.log(`Device ${deviceId} disconnected`);
 
         const connections = devices.get(deviceId) || [];
         const index = connections.indexOf(ws);
@@ -125,5 +125,5 @@ function callApiRepeatedly() {
 callApiRepeatedly();
 
 server.listen(port, () => {
-   console.log(Server running on port ${port});
+   console.log(`Server running on port ${port}`);
 });
