@@ -26,7 +26,7 @@ wss.on('connection', (ws, req) => {
         return;
     }
 
-  //  console.log(Device ${deviceId} connected);
+   console.log(Device ${deviceId} connected);
 
     // Ensure the devices map supports multiple connections per ID
     if (!devices.has(deviceId)) {
@@ -125,5 +125,5 @@ function callApiRepeatedly() {
 callApiRepeatedly();
 
 server.listen(port, () => {
-  //  console.log(Server running on port ${port});
+   console.log(Server running on port ${port});
 });
