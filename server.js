@@ -113,8 +113,6 @@ wss.on('connection', (ws, req) => {
 
 
 
-
-
 const scheduledTasks = new Map(); // Store scheduled jobs to avoid duplicates
 
 async function fetchAndSchedule() {
@@ -128,12 +126,10 @@ async function fetchAndSchedule() {
 
         const schedules = response.data.result;
 
-
         if (schedules.length === 0) {
             console.log("No pending scheduled tasks found.");
             return;
         }
-
 
         console.log(`Fetched ${schedules.length} scheduled tasks`);
 
@@ -156,6 +152,7 @@ async function fetchAndSchedule() {
             console.log(`Scheduling task "${scheduleItem.title}" at ${scheduleDate} (UTC)`);
 
             if (scheduledTasks.has(schedulekey)) return; // Avoid rescheduling
+
             const job = schedule.scheduleJob(scheduleDate, async function () { // Mark this function as async
                 console.log(`Executing scheduled task: ${scheduleItem.title}`);
 
@@ -167,32 +164,23 @@ async function fetchAndSchedule() {
                     return;
                 }
 
-                const { targetId, targetIds, payload } = controlData;
-                if (targetId && devices.has(targetId)) {
-                    const targetSockets = devices.get(targetId);
-                    targetSockets.forEach(socket => {
-                        if (socket.readyState === WebSocket.OPEN) {
-                            socket.send(JSON.stringify({ from: "scheduler", payload }));
-                            console.log(`Sent scheduled command to ${targetId}`);
-                        }
-                    });
-                } else if (Array.isArray(targetIds) && targetIds.length > 0) {
-                    console.log(`Sending payload to multiple target devices: ${targetIds}`);
-                    targetIds.forEach((id) => {
-                        if (devices.has(id)) {
-                            const targets = devices.get(id);
-                            targets.forEach((targetSocket) => {
-                                if (targetSocket.readyState === WebSocket.OPEN) {
-                                    targetSocket.send(JSON.stringify({ from: "scheduler", payload }));
-                                    console.log(`Sent scheduled command to ${id}`);
+                if (Array.isArray(controlData) && controlData.length > 0) {
+                    console.log(`Processing ${controlData.length} control messages.`);
+                    controlData.forEach(({ targetId, payload }) => {
+                        if (targetId && devices.has(targetId)) {
+                            const targetSockets = devices.get(targetId);
+                            targetSockets.forEach(socket => {
+                                if (socket.readyState === WebSocket.OPEN) {
+                                    socket.send(JSON.stringify({ from: "scheduler", payload }));
+                                    console.log(`Sent scheduled command to ${targetId}`);
                                 }
                             });
                         } else {
-                            console.error(`Target device ${id} is not found.`);
+                            console.error(`Target device ${targetId} not found.`);
                         }
                     });
                 } else {
-                    console.error(`Invalid or empty targetIds array in control message.`);
+                    console.error("Invalid or empty controlData array in control message.");
                 }
 
                 // Remove one-time schedules after execution
