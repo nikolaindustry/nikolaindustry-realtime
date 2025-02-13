@@ -28,7 +28,7 @@ wss.on('connection', (ws, req) => {
         return;
     }
 
-   console.log(`Device ${deviceId} connected`);
+    console.log(`Device ${deviceId} connected`);
 
     // Ensure the devices map supports multiple connections per ID
     if (!devices.has(deviceId)) {
@@ -50,7 +50,7 @@ wss.on('connection', (ws, req) => {
             return;
         }
 
-       console.log(`Message from ${deviceId}:`);
+        console.log(`Message from ${deviceId}:`);
         console.log(JSON.stringify(decodedMessage));
 
         const { type, targetIds, targetId, payload } = decodedMessage;
@@ -78,7 +78,7 @@ wss.on('connection', (ws, req) => {
                         }
                     });
                 } else {
-                   console.error(`Target device ${id} is not found.`);
+                    console.error(`Target device ${id} is not found.`);
                 }
             });
         } else if (targetId && devices.has(targetId)) {
@@ -128,6 +128,13 @@ async function fetchAndSchedule() {
 
         const schedules = response.data.result;
 
+
+        if (schedules.length === 0) {
+            console.log("No pending scheduled tasks found.");
+            return;
+        }
+
+
         console.log(`Fetched ${schedules.length} scheduled tasks`);
 
         schedules.forEach(scheduleItem => {
@@ -151,7 +158,7 @@ async function fetchAndSchedule() {
             if (scheduledTasks.has(schedulekey)) return; // Avoid rescheduling
             const job = schedule.scheduleJob(scheduleDate, async function () { // Mark this function as async
                 console.log(`Executing scheduled task: ${scheduleItem.title}`);
-            
+
                 let controlData;
                 try {
                     controlData = JSON.parse(controlmessage);
@@ -159,8 +166,8 @@ async function fetchAndSchedule() {
                     console.error(`Invalid control message JSON: ${e.message}`);
                     return;
                 }
-            
-                const { targetId, payload } = controlData;
+
+                const { targetId, targetIds, payload } = controlData;
                 if (targetId && devices.has(targetId)) {
                     const targetSockets = devices.get(targetId);
                     targetSockets.forEach(socket => {
@@ -169,14 +176,29 @@ async function fetchAndSchedule() {
                             console.log(`Sent scheduled command to ${targetId}`);
                         }
                     });
+                } else if (Array.isArray(targetIds) && targetIds.length > 0) {
+                    console.log(`Sending payload to multiple target devices: ${targetIds}`);
+                    targetIds.forEach((id) => {
+                        if (devices.has(id)) {
+                            const targets = devices.get(id);
+                            targets.forEach((targetSocket) => {
+                                if (targetSocket.readyState === WebSocket.OPEN) {
+                                    targetSocket.send(JSON.stringify({ from: "scheduler", payload }));
+                                    console.log(`Sent scheduled command to ${id}`);
+                                }
+                            });
+                        } else {
+                            console.error(`Target device ${id} is not found.`);
+                        }
+                    });
                 } else {
-                    console.error(`Scheduled target device ${targetId} not found.`);
+                    console.error(`Invalid or empty targetIds array in control message.`);
                 }
-            
+
                 // Remove one-time schedules after execution
                 if (type === "one_time") {
                     scheduledTasks.delete(schedulekey);
-            
+
                     try {
                         const replay = await axios.get(`https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/updateschedulestatus?schedulekey=${schedulekey}&newstatus=executed`);
                         console.log(replay.data);
@@ -201,5 +223,5 @@ setInterval(fetchAndSchedule, 30000);
 
 
 server.listen(port, () => {
-   console.log(`Server running on port ${port}`);
+    console.log(`Server running on port ${port}`);
 });
