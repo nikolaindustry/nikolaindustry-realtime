@@ -227,7 +227,7 @@ async function fetchAndSchedule() {
 }
 
 // Run every 30 seconds
-setInterval(fetchAndSchedule, 30000);
+setInterval(fetchAndSchedule, 300000);
 
 //------------------------------------------------------------------backend http call---------------
 
