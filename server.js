@@ -116,12 +116,13 @@ async function fetchAndSchedule() {
     try {
         const response = await axios.get('https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/getschedule?src=222031154'); 
         
-        if (!response.data || !response.data.body || !response.data.body.result) {
+      if (!response.data || !response.data.result) {
             console.error('Invalid API response structure.');
-            return;
+        return;
         }
 
-        const schedules = response.data.body.result;
+        const schedules = response.data.result;
+
         console.log(`Fetched ${schedules.length} scheduled tasks`);
 
         schedules.forEach(scheduleItem => {
