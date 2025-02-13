@@ -108,22 +108,80 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-// Repeated API Call Function
-function callApiRepeatedly() {
-    setInterval(async () => {
-        try {
-          //  const response = await axios.get('https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/getschedule?src=222031154'); 
-           // console.log('API Response:', response.data);
+const schedule = require('node-schedule');
 
-           
-        } catch (error) {
-          //  console.error('Error calling API:', error.message);
+const scheduledTasks = new Map(); // Store scheduled jobs to avoid duplicates
+
+async function fetchAndSchedule() {
+    try {
+        const response = await axios.get('https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/getschedule?src=222031154'); 
+        
+        if (!response.data || !response.data.body || !response.data.body.result) {
+            console.error('Invalid API response structure.');
+            return;
         }
-    }, 3600000); 
+
+        const schedules = response.data.body.result;
+        console.log(`Fetched ${schedules.length} scheduled tasks`);
+
+        schedules.forEach(scheduleItem => {
+            const { schedulekey, time, controlmessage, type, status, date, timezone } = scheduleItem;
+
+            if (status !== 'pending') return; // Only process pending schedules
+
+            let [hours, minutes, seconds] = time.split(':').map(Number);
+            const scheduledTime = new Date();
+            scheduledTime.setHours(hours, minutes, seconds, 0);
+
+            // Convert to UTC+05:30 if needed
+            const timeOffset = 5.5 * 60 * 60 * 1000; 
+            const utcTime = new Date(scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000 + timeOffset);
+
+            if (scheduledTasks.has(schedulekey)) return; // Avoid rescheduling
+
+            console.log(`Scheduling task "${scheduleItem.title}" at ${utcTime}`);
+
+            const job = schedule.scheduleJob(utcTime, function () {
+                console.log(`Executing scheduled task: ${scheduleItem.title}`);
+
+                let controlData;
+                try {
+                    controlData = JSON.parse(controlmessage);
+                } catch (e) {
+                    console.error(`Invalid control message JSON: ${e.message}`);
+                    return;
+                }
+
+                const { targetId, payload } = controlData;
+                if (targetId && devices.has(targetId)) {
+                    const targetSockets = devices.get(targetId);
+                    targetSockets.forEach(socket => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send(JSON.stringify({ from: "scheduler", payload }));
+                            console.log(`Sent scheduled command to ${targetId}`);
+                        }
+                    });
+                } else {
+                    console.error(`Scheduled target device ${targetId} not found.`);
+                }
+
+                // Remove one-time schedules after execution
+                if (type === "one_time") {
+                    scheduledTasks.delete(schedulekey);
+                }
+            });
+
+            scheduledTasks.set(schedulekey, job);
+        });
+
+    } catch (error) {
+        console.error('Error fetching schedules:', error.message);
+    }
 }
 
-// Start the repeated API calls
-callApiRepeatedly();
+// Run every minute
+setInterval(fetchAndSchedule, 30000);
+
 
 server.listen(port, () => {
    console.log(`Server running on port ${port}`);
