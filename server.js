@@ -135,9 +135,17 @@ async function fetchAndSchedule() {
             scheduledTime.setHours(hours, minutes, seconds, 0);
 
             // Convert to UTC+05:30 if needed
-            const timeOffset = 5.5 * 60 * 60 * 1000; 
-            const utcTime = new Date(scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000 + timeOffset);
+            // const timeOffset = 5.5 * 60 * 60 * 1000; 
+            // const utcTime = new Date(scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000 + timeOffset);
 
+            // Assuming `timezone` is provided as "UTC+05:30"
+            const offsetHours = parseFloat(timezone.replace("UTC", ""));
+            const timeOffset = offsetHours * 60 * 60 * 1000; 
+            
+            const utcTime = new Date(scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000);
+            utcTime.setTime(utcTime.getTime() - timeOffset); // Adjust to UTC
+
+            
             if (scheduledTasks.has(schedulekey)) return; // Avoid rescheduling
 
             console.log(`Scheduling task "${scheduleItem.title}" at ${utcTime}`);
