@@ -93,6 +93,27 @@ wss.on('connection', (ws, req) => {
             const response = JSON.stringify({ message: "I got your message" });
             ws.send(response);
         }
+
+
+
+
+        if (type === 'webrtc-offer' || type === 'webrtc-answer' || type === 'webrtc-ice') {
+            if (targetId && devices.has(targetId)) {
+                devices.get(targetId).forEach((targetSocket) => {
+                    if (targetSocket.readyState === WebSocket.OPEN) {
+                        targetSocket.send(JSON.stringify({ from: deviceId, type, payload }));
+                        console.log(`Forwarded ${type} from ${deviceId} to ${targetId}`);
+                    }
+                });
+            } else {
+                console.error(`Target device ${targetId} not found.`);
+            }
+        }
+
+
+
+
+
     });
 
     ws.on('close', () => {
@@ -130,6 +151,7 @@ async function fetchAndSchedule() {
             console.log("No pending scheduled tasks found.");
             return;
         }
+
 
         console.log(`Fetched ${schedules.length} scheduled tasks`);
 
