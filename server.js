@@ -149,10 +149,9 @@ async function fetchAndSchedule() {
             console.log(`Scheduling task "${scheduleItem.title}" at ${scheduleDate} (UTC)`);
 
             if (scheduledTasks.has(schedulekey)) return; // Avoid rescheduling
-
-            const job = schedule.scheduleJob(scheduleDate, function () {
+            const job = schedule.scheduleJob(scheduleDate, async function () { // Mark this function as async
                 console.log(`Executing scheduled task: ${scheduleItem.title}`);
-
+            
                 let controlData;
                 try {
                     controlData = JSON.parse(controlmessage);
@@ -160,7 +159,7 @@ async function fetchAndSchedule() {
                     console.error(`Invalid control message JSON: ${e.message}`);
                     return;
                 }
-
+            
                 const { targetId, payload } = controlData;
                 if (targetId && devices.has(targetId)) {
                     const targetSockets = devices.get(targetId);
@@ -173,17 +172,57 @@ async function fetchAndSchedule() {
                 } else {
                     console.error(`Scheduled target device ${targetId} not found.`);
                 }
-
+            
                 // Remove one-time schedules after execution
                 if (type === "one_time") {
                     scheduledTasks.delete(schedulekey);
-
-                    const replay = await axios.get(`https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/updateschedulestatus?schedulekey=${schedulekey}&newstatus=executed`);
-                    console.log(replay);
-
-                    
+            
+                    try {
+                        const replay = await axios.get(`https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/updateschedulestatus?schedulekey=${schedulekey}&newstatus=executed`);
+                        console.log(replay.data);
+                    } catch (error) {
+                        console.error(`Error updating schedule status: ${error.message}`);
+                    }
                 }
             });
+
+            // const job = schedule.scheduleJob(scheduleDate, function () {
+            //     console.log(`Executing scheduled task: ${scheduleItem.title}`);
+
+            //     let controlData;
+            //     try {
+            //         controlData = JSON.parse(controlmessage);
+            //     } catch (e) {
+            //         console.error(`Invalid control message JSON: ${e.message}`);
+            //         return;
+            //     }
+
+            //     const { targetId, payload } = controlData;
+            //     if (targetId && devices.has(targetId)) {
+            //         const targetSockets = devices.get(targetId);
+            //         targetSockets.forEach(socket => {
+            //             if (socket.readyState === WebSocket.OPEN) {
+            //                 socket.send(JSON.stringify({ from: "scheduler", payload }));
+            //                 console.log(`Sent scheduled command to ${targetId}`);
+            //             }
+            //         });
+            //     } else {
+            //         console.error(`Scheduled target device ${targetId} not found.`);
+            //     }
+
+            //     // Remove one-time schedules after execution
+            //     if (type === "one_time") {
+            //         scheduledTasks.delete(schedulekey);
+                    
+            //           try {
+            //                 const replay = await axios.get(`https://nikolaindustry.wixstudio.com/hyperwisor-v2/_functions/updateschedulestatus?schedulekey=${schedulekey}&newstatus=executed`);
+            //                 console.log(replay.data);
+            //             } catch (error) {
+            //                 console.error(`Error updating schedule status: ${error.message}`);
+            //             }
+                    
+            //     }
+            // });
 
             scheduledTasks.set(schedulekey, job);
         });
