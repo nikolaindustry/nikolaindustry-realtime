@@ -229,6 +229,16 @@ async function fetchAndSchedule() {
 // Run every 30 seconds
 setInterval(fetchAndSchedule, 30000);
 
+//------------------------------------------------------------------backend http call---------------
+
+app.get('/api/fetch-and-schedule', async (req, res) => {
+    try {
+        await fetchAndSchedule(); // Call the function
+        res.status(200).json({ message: "fetchAndSchedule executed successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Error executing fetchAndSchedule", details: error.message });
+    }
+});
 
 
 
