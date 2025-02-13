@@ -116,92 +116,6 @@ wss.on('connection', (ws, req) => {
     });
     
 
-    // ws.on('message', (message) => {
-    //     let decodedMessage;
-
-    //     try {
-    //         if (Buffer.isBuffer(message)) {
-    //             message = message.toString();
-    //         }
-    //         decodedMessage = JSON.parse(message);
-    //     } catch (e) {
-    //         console.error('Error parsing message:', e);
-    //         return;
-    //     }
-
-    //     console.log(`Message from ${deviceId}:`);
-    //     console.log(JSON.stringify(decodedMessage));
-
-
-
-    //         // Ensure messages are processed as an array
-    // if (!Array.isArray(decodedMessages)) {
-    //     decodedMessages = [decodedMessages]; // Convert single message into an array for uniform handling
-    // }
-
-
-    //     const { type, targetIds, targetId, payload } = decodedMessage;
-
-    //     if (type === 'getConnectedDevices') {
-    //         const connectedDevices = Array.from(devices.keys());
-    //         ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
-    //         console.log(`Sent connected devices list to ${deviceId}`);
-    //     } else if (type === 'broadcast') {
-    //         const connections = devices.get(deviceId);
-    //         connections.forEach((conn) => {
-    //             if (conn.readyState === WebSocket.OPEN) {
-    //                 conn.send(JSON.stringify({ from: deviceId, payload }));
-    //                 console.log(`Broadcast message from ${deviceId}`);
-    //             }
-    //         });
-    //     } else if (Array.isArray(targetIds)) {
-    //         targetIds.forEach((id) => {
-    //             if (devices.has(id)) {
-    //                 const targets = devices.get(id);
-    //                 targets.forEach((targetSocket) => {
-    //                     if (targetSocket.readyState === WebSocket.OPEN) {
-    //                         targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-    //                         console.log(`Message forwarded from ${deviceId} to ${id}`);
-    //                     }
-    //                 });
-    //             } else {
-    //                 console.error(`Target device ${id} is not found.`);
-    //             }
-    //         });
-    //     } else if (targetId && devices.has(targetId)) {
-    //         const targets = devices.get(targetId);
-    //         targets.forEach((targetSocket) => {
-    //             if (targetSocket.readyState === WebSocket.OPEN) {
-    //                 targetSocket.send(JSON.stringify({ from: deviceId, payload }));
-    //                 console.log(`Message forwarded from ${deviceId} to ${targetId}`);
-    //             }
-    //         });
-    //     } else {
-    //         const response = JSON.stringify({ message: "I got your message" });
-    //         ws.send(response);
-    //     }
-
-
-
-
-    //     if (type === 'webrtc-offer' || type === 'webrtc-answer' || type === 'webrtc-ice') {
-    //         if (targetId && devices.has(targetId)) {
-    //             devices.get(targetId).forEach((targetSocket) => {
-    //                 if (targetSocket.readyState === WebSocket.OPEN) {
-    //                     targetSocket.send(JSON.stringify({ from: deviceId, type, payload }));
-    //                     console.log(`Forwarded ${type} from ${deviceId} to ${targetId}`);
-    //                 }
-    //             });
-    //         } else {
-    //             console.error(`Target device ${targetId} not found.`);
-    //         }
-    //     }
-
-
-
-
-
-    // });
 
     ws.on('close', () => {
         console.log(`Device ${deviceId} disconnected`);
@@ -317,6 +231,15 @@ async function fetchAndSchedule() {
 setInterval(fetchAndSchedule, 30000);
 
 
+//------------------------------------------------------------------backend http call---------------
+app.get('/api/fetch-and-schedule', async (req, res) => {
+    try {
+        await fetchAndSchedule(); // Call the function
+        res.status(200).json({ message: "fetchAndSchedule executed successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Error executing fetchAndSchedule", details: error.message });
+    }
+});
 
 
 server.listen(port, () => {
