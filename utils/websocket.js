@@ -91,8 +91,8 @@ function handleConnection(ws, req) {
                     }
                 });
             } else {
-                // const response = JSON.stringify({ message: "✅ Message received but no action taken" });
-                // ws.send(response);
+                const response = JSON.stringify({ message: "✅ Message received but no action taken" });
+                ws.send(response);
             }
         });
     });
