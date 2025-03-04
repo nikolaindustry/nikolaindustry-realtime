@@ -461,7 +461,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             feedbackPayload["deviceid"] = deviceid;
             feedbackPayload["pin"] = pin;
             feedbackPayload["controlid"] = controlid;
-            feedbackPayload["status"] = digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
+            feedbackPayload["status"] = "started";//digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
             serializeJson(feedbackDoc, feedback);
 
           } else if (strcmp(action, "fade_in") == 0) {
@@ -477,7 +477,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             feedbackPayload["deviceid"] = deviceid;
             feedbackPayload["pin"] = pin;
             feedbackPayload["controlid"] = controlid;
-            feedbackPayload["status"] = digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
+            feedbackPayload["status"] = "started"; //digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
             serializeJson(feedbackDoc, feedback);
           } else if (strcmp(action, "fade_out") == 0) {
             int start_duty = doc["payload"]["params"]["start_duty"].isNull() ? -1 : doc["payload"]["params"]["start_duty"].as<int>();
@@ -492,7 +492,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             feedbackPayload["deviceid"] = deviceid;
             feedbackPayload["pin"] = pin;
             feedbackPayload["controlid"] = controlid;
-            feedbackPayload["status"] = digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
+            feedbackPayload["status"] = "started";//digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
             serializeJson(feedbackDoc, feedback);
           } else if (strcmp(action, "pulse") == 0) {
             int duration = doc["payload"]["params"]["duration"].isNull() ? 1000 : doc["payload"]["params"]["duration"].as<int>();
@@ -504,7 +504,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             feedbackPayload["deviceid"] = deviceid;
             feedbackPayload["pin"] = pin;
             feedbackPayload["controlid"] = controlid;
-            feedbackPayload["status"] = digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
+            feedbackPayload["status"] = "started";//digitalRead(pin) == HIGH ? "HIGH" : "LOW";  // Current status of GPIO
             serializeJson(feedbackDoc, feedback);
 
           } else if (strcmp(action, "get_gpio_status") == 0) {
