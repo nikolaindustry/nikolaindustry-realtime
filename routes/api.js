@@ -12,4 +12,14 @@ router.get('/fetch-and-schedule', async (req, res) => {
     }
 });
 
+
+router.get('/health', async (req, res) => {
+    try {
+        await fetchAndSchedule();
+        res.json({ status: "up" });
+    } catch (error) {
+        res.status(500).json({ error: "Error executing fetchAndSchedule", details: error.message });
+    }
+});
+
 module.exports = router;
