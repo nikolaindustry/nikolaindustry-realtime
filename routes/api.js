@@ -12,25 +12,14 @@ router.get('/fetch-and-schedule', async (req, res) => {
     }
 });
 
+
 router.get('/health', async (req, res) => {
-    try {
-        // Just return the status without running heavy operations
-        res.json({ 
-            status: "up",
-            timestamp: new Date().toISOString() 
-        });
-    } catch (error) {
-        res.status(500).json({ 
-            status: "down",
-            error: error.message 
-        });
-    }
+    res.json({
+        status: "up",
+        timestamp: new Date().toISOString()
+    });
 });
 
-// Also handle HEAD requests which is what the client is using
-router.head('/health', (req, res) => {
-    res.status(200).send();
-});
 
 
 module.exports = router;
