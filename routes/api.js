@@ -21,8 +21,8 @@ router.get('/health', (req, res) => {
 });
 
 // Handle HEAD request for health check
-router.head('/health', (req, res) => {
-    res.status(200).send();
-});
+// router.head('/health', (req, res) => {
+//     res.status(200).send();
+// });
 
 module.exports = router;
