@@ -14,10 +14,17 @@ router.get('/fetch-and-schedule', async (req, res) => {
 
 // Health Check Route
 router.get('/health', (req, res) => {
-    res.json({
+    let data = {
         status: "up",
         timestamp: new Date().toISOString()
-    });
+        
+    }
+    res.json(data);
+     res.status(200).send();
+    // res.json({
+    //     status: "up",
+    //     timestamp: new Date().toISOString()
+    // });
 });
 
 // Handle HEAD request for health check
