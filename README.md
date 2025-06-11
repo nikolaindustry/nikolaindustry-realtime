@@ -5,7 +5,7 @@ This is a lightweight Node.js-based WebSocket server designed to manage real-tim
 
 ## 🔧 Features
 
-- 📡 **Device Registration**: Devices connect using a URL with a query parameter `id`, e.g., `wss://yourdomain.com?id=device-123`.
+- 📡 **Device Registration**: Devices connect using a URL with a query parameter `id`, e.g., `wss://nikolaindustry-realtime.onrender.com/?id=device-123`.
 - 🧠 **Smart Routing**: Messages can be sent to specific devices (`targetId` or `targetIds`) or broadcast to all connections from the sender.
 - 💬 **Batch Messaging Support**: Send multiple commands using a single `controlData` array.
 - 📃 **Connected Devices Listing**: Send `{ "type": "getConnectedDevices" }` to get a list of all currently connected devices.
@@ -39,7 +39,7 @@ server.listen(8080, () => {
 ### 3. Client Connection
 
 ```js
-const ws = new WebSocket('ws://localhost:8080?id=device-123');
+const ws = new WebSocket('wss://nikolaindustry-realtime.onrender.com/?id=device-123'); 
 ```
 
 ## 🧪 Example Messages
@@ -103,15 +103,6 @@ const ws = new WebSocket('ws://localhost:8080?id=device-123');
   "type": "connectedDevices",
   "devices": ["device-123", "device-456"]
 }
-```
-
-## 📂 Project Structure
-
-```bash
-.
-├── websocket-handler.js  # This file contains connection and message handling logic
-├── server.js             # Entry point to start the WebSocket server
-└── README.md             # Documentation
 ```
 
 ## 🛡️ Notes
