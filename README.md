@@ -1,5 +1,5 @@
 
-# NikolaIndustry Realtime WebSocket Server
+# nikolaindustry-realtime Server
 
 This is a lightweight Node.js-based WebSocket server designed to manage real-time, device-to-device communication over the Web. Each device connects with a unique `deviceId` and can send or receive messages based on defined routing rules.
 
