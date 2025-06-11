@@ -114,4 +114,4 @@ const ws = new WebSocket('wss://nikolaindustry-realtime.onrender.com/?id=device-
 
 ## 📃 License
 
-MIT License © [Your Name / Company]
+MIT License © [NIKOLAINDUSTRY]
