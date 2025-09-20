@@ -4,7 +4,7 @@ This server now provides HTTP REST APIs that forward data to connected WebSocket
 
 ## Base URL
 ```
-[http://localhost:3000](https://nikolaindustry-realtime.onrender.com/api]
+https://nikolaindustry-realtime.onrender.com/api
 ```
 
 ## Endpoints
@@ -250,21 +250,21 @@ The `from` field indicates the source:
 
 ### 1. GPIO Control
 ```bash
-curl -X POST http://localhost:3000/api/send/esp32-001 \
+curl -X POST https://nikolaindustry-realtime.onrender.com/api/send/esp32-001 \
   -H "Content-Type: application/json" \
   -d '{"payload": {"action": "control_gpio", "pin": 2, "state": "HIGH"}}'
 ```
 
 ### 2. PWM Control
 ```bash
-curl -X POST http://localhost:3000/api/send/esp32-001 \
+curl -X POST https://nikolaindustry-realtime.onrender.com/api/send/esp32-001 \
   -H "Content-Type: application/json" \
   -d '{"payload": {"action": "dim_brightness", "pin": 16, "start_value": 0, "end_value": 255, "duration": 5000}}'
 ```
 
 ### 3. Emergency Stop All Devices
 ```bash
-curl -X POST http://localhost:3000/api/broadcast \
+curl -X POST https://nikolaindustry-realtime.onrender.com/api/broadcast \
   -H "Content-Type: application/json" \
   -d '{"payload": {"command": "EMERGENCY_STOP"}}'
 ```
