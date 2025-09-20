@@ -4,7 +4,7 @@ This server now provides HTTP REST APIs that forward data to connected WebSocket
 
 ## Base URL
 ```
-[http://localhost:3000](https://nikolaindustry-realtime.onrender.com/api
+[http://localhost:3000](https://nikolaindustry-realtime.onrender.com/api]
 ```
 
 ## Endpoints
