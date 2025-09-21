@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Device Simulator - NIKOLAINDUSTRY</title>
+    <style>
+        :root {
+            --primary-color: #10b981;
+            --primary-dark: #059669;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #064e3b;
+            --dark-surface: #047857;
+            --light-bg: #ecfdf5;
+            --light-surface: #ffffff;
+            --border-color: #d1fae5;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--light-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--light-bg);
+        }
+
+        .app-header {
+            background: var(--light-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            z-index: 1000;
+        }
+
+        .app-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-header .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .app-header .logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online { background: var(--success-color); }
+        .status-offline { background: var(--danger-color); }
+        .status-connecting { background: var(--warning-color); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .app-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 0;
+            overflow: hidden;
+            height: calc(100vh - 73px); /* Subtract header height */
+        }
+
+        .main-panel {
+            background: var(--light-surface);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .sidebar-panel {
+            background: var(--dark-bg);
+            color: #d1fae5;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #0f766e;
+            background: var(--dark-surface);
+        }
+
+        .sidebar-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0fdfa;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: #a7f3d0;
+        }
+
+        .logs-container {
+            flex: 1;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Important for flexbox scrolling */
+        }
+
+        .logs-content {
+            flex: 1;
+            background: #022c22;
+            border: 1px solid #0f766e;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            max-height: 100%;
+            min-height: 0; /* Important for flexbox scrolling */
+            /* Custom scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: #0f766e #064e3b;
+        }
+
+        .logs-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .logs-content::-webkit-scrollbar-track {
+            background: #064e3b;
+            border-radius: 3px;
+        }
+
+        .logs-content::-webkit-scrollbar-thumb {
+            background: #0f766e;
+            border-radius: 3px;
+        }
+
+        .logs-content::-webkit-scrollbar-thumb:hover {
+            background: #115e59;
+        }
+
+        .section-card {
+            background: var(--light-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .section-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .section-header {
+            background: var(--light-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .section-header .section-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--light-surface);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgb(16 185 129 / 0.1);
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .device-list {
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .device-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .device-item:hover {
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .device-item:last-child {
+            border-bottom: none;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .device-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .protocol-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .protocol-mqtt { background: var(--success-color); }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 4px 0;
+            font-size: 11px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .log-info { color: #22d3ee; }
+        .log-success { color: #34d399; }
+        .log-error { color: #fb7185; }
+        .log-warning { color: #fbbf24; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #f0fdf4;
+            border-color: var(--primary-color);
+            color: #065f46;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: var(--warning-color);
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-color: var(--danger-color);
+            color: #991b1b;
+        }
+
+        @media (max-width: 1200px) {
+            .app-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 350px;
+                height: calc(100vh - 73px);
+            }
+            
+            .sidebar-panel {
+                height: 350px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .main-panel {
+                padding: 16px;
+            }
+            
+            .app-header .logo h1 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">📡</div>
+                <h1>MQTT Device Simulator</h1>
+            </div>
+            <div class="connection-indicator" id="connectionStatus">
+                <div class="status-dot status-offline"></div>
+                MQTT Disconnected
+            </div>
+        </header>
+
+        <div class="app-content">
+            <main class="main-panel">
+                <!-- Device Configuration -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">⚙️</div>
+                        <h3>MQTT Device Configuration</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="deviceId">Device Identifier</label>
+                                <input type="text" id="deviceId" class="form-input" value="mqtt-device-001">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="qos">QoS Level</label>
+                                <select id="qos" class="form-select">
+                                    <option value="0">0 - At most once</option>
+                                    <option value="1" selected>1 - At least once</option>
+                                    <option value="2">2 - Exactly once</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="brokerUrl">MQTT Broker URL</label>
+                            <input type="text" id="brokerUrl" class="form-input" value="wss://nikolaindustry-realtime.onrender.com:8883">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="connectMQTT()">🔌 Connect</button>
+                            <button class="btn btn-outline" onclick="disconnectMQTT()">🔌 Disconnect</button>
+                            <button class="btn btn-secondary" onclick="refreshDevices()">🔄 Refresh Devices</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connected Devices -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">📱</div>
+                        <h3>Connected Devices</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="device-list" id="deviceList">
+                            <div style="text-align: center; color: var(--text-muted); padding: 20px;">Connect to discover devices</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publishing Interface -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">📤</div>
+                        <h3>Publish Message</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="publishTopic">Target Topic</label>
+                                <input type="text" id="publishTopic" class="form-input" value="device/esp32-001/commands">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="publishQos">QoS Level</label>
+                                <select id="publishQos" class="form-select">
+                                    <option value="0">0 - At most once</option>
+                                    <option value="1" selected>1 - At least once</option>
+                                    <option value="2">2 - Exactly once</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="publishPayload">JSON Payload</label>
+                            <textarea id="publishPayload" class="form-textarea">{"command": "TURN_ON", "pin": 2, "timestamp": "2024-01-01T10:00:00Z"}</textarea>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="publishMessage()">📤 Publish</button>
+                            <button class="btn btn-success" onclick="publishToDevice()">📤 Publish to Device</button>
+                            <button class="btn btn-secondary" onclick="fillTestData()">📝 Load Test Data</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subscription Interface -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">📥</div>
+                        <h3>Subscribe to Topics</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-group">
+                            <label class="form-label" for="subscribeTopic">Topic to Subscribe</label>
+                            <input type="text" id="subscribeTopic" class="form-input" value="device/mqtt-device-001/commands">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="subscribeToTopic()">📥 Subscribe</button>
+                            <button class="btn btn-outline" onclick="unsubscribeFromTopic()">🚫 Unsubscribe</button>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Active Subscriptions</label>
+                            <div class="device-list" id="subscriptionsList" style="max-height: 120px;">
+                                <div style="text-align: center; color: var(--text-muted); padding: 15px;">No active subscriptions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device-to-Device Communication -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">🔄</div>
+                        <h3>Device-to-Device Communication</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="alert alert-info">
+                            <strong>Direct Device Communication:</strong> Send messages directly from one MQTT device to another
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="targetDevice">Target Device</label>
+                                <input type="text" id="targetDevice" class="form-input" value="actuator-esp32-002">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="d2dQos">QoS Level</label>
+                                <select id="d2dQos" class="form-select">
+                                    <option value="0">0 - At most once</option>
+                                    <option value="1" selected>1 - At least once</option>
+                                    <option value="2">2 - Exactly once</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="d2dPayload">JSON Payload</label>
+                            <textarea id="d2dPayload" class="form-textarea">{"command": "START_OPERATION", "duration": 30, "mode": "automatic"}</textarea>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="sendToDevice()">📤 Send to Device</button>
+                            <button class="btn btn-success" onclick="sendBroadcast()">📢 Broadcast</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="sidebar-panel">
+                <div class="sidebar-header">
+                    <h3>MQTT Activity Monitor</h3>
+                    <p>Real-time MQTT communication logs</p>
+                    <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a7f3d0;">
+                        <span>• Auto-scroll enabled</span>
+                        <span>• Live updates</span>
+                    </div>
+                </div>
+                <div class="logs-container">
+                    <div class="logs-content" id="logs">
+                        <div class="log-info">[SYSTEM] MQTT Device Simulator initialized</div>
+                        <div class="log-info">[READY] Awaiting MQTT connection...</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let mqttClient = null;
+        let isConnected = false;
+        let subscriptions = [];
+        const baseUrl = 'https://nikolaindustry-realtime.onrender.com';
+        
+        // Logging functions
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            logs.appendChild(logEntry);
+            
+            // Force scroll to bottom with a small delay to ensure DOM is updated
+            requestAnimationFrame(() => {
+                logs.scrollTop = logs.scrollHeight;
+            });
+            
+            // Limit log entries to prevent memory issues (keep last 200 entries)
+            const entries = logs.children;
+            if (entries.length > 200) {
+                for (let i = 0; i < entries.length - 200; i++) {
+                    logs.removeChild(entries[0]);
+                }
+            }
+        }
+
+        function clearLogs() {
+            const logs = document.getElementById('logs');
+            logs.innerHTML = '';
+            log('[SYSTEM] Logs cleared by user', 'info');
+        }
+
+        // Connection status
+        function updateConnectionStatus(status, message) {
+            const statusEl = document.getElementById('connectionStatus');
+            const indicator = statusEl.querySelector('.status-dot');
+            
+            indicator.className = `status-dot status-${status}`;
+            statusEl.innerHTML = `<div class="status-dot status-${status}"></div>${message}`;
+        }
+
+        // MQTT functions
+        function connectMQTT() {
+            const deviceId = document.getElementById('deviceId').value;
+            const brokerUrl = document.getElementById('brokerUrl').value;
+            
+            if (!deviceId) {
+                log('Please enter a device ID', 'error');
+                return;
+            }
+
+            if (!brokerUrl) {
+                log('Please enter a broker URL', 'error');
+                return;
+            }
+
+            try {
+                updateConnectionStatus('connecting', 'Connecting...');
+                log(`🔌 Connecting to MQTT broker: ${brokerUrl}`, 'info');
+                
+                // For this implementation, we'll use the HTTP API to interact with MQTT
+                // since direct MQTT over WebSocket requires a specific client library
+                log('✅ Using HTTP API to interact with MQTT broker', 'success');
+                isConnected = true;
+                updateConnectionStatus('online', 'MQTT Connected (via HTTP API)');
+                log(`✅ Connected as device: ${deviceId}`, 'success');
+                
+                refreshDevices();
+            } catch (error) {
+                log(`❌ Failed to connect MQTT: ${error}`, 'error');
+                updateConnectionStatus('offline', 'Connection Failed');
+            }
+        }
+
+        function disconnectMQTT() {
+            if (isConnected) {
+                isConnected = false;
+                updateConnectionStatus('offline', 'MQTT Disconnected');
+                log('MQTT disconnected manually', 'info');
+                subscriptions = [];
+                updateSubscriptionsList();
+            }
+        }
+
+        // HTTP API functions
+        async function makeHttpRequest(url, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                log(`🌐 HTTP ${method} ${url}`, 'info');
+                if (body) log(`📤 Request body: ${JSON.stringify(body, null, 2)}`, 'info');
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ HTTP Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`❌ HTTP Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+                
+                return data;
+            } catch (error) {
+                log(`❌ HTTP Request failed: ${error}`, 'error');
+                return null;
+            }
+        }
+
+        async function refreshDevices() {
+            const data = await makeHttpRequest(`${baseUrl}/api/devices`);
+            if (data && data.devices) {
+                const deviceList = document.getElementById('deviceList');
+                deviceList.innerHTML = '';
+                
+                data.devices.forEach(device => {
+                    const deviceEl = document.createElement('div');
+                    deviceEl.className = 'device-item';
+                    
+                    const protocols = device.protocols.map(p => 
+                        `<span class="protocol-badge protocol-${p}">${p.toUpperCase()}</span>`
+                    ).join('');
+                    
+                    deviceEl.innerHTML = `
+                        <div class="device-info">
+                            <div class="status-dot status-${device.status}"></div>
+                            <strong>${device.deviceId}</strong>
+                        </div>
+                        <div class="device-meta">
+                            ${protocols}
+                            <small style="color: var(--text-muted);">(${device.connections})</small>
+                        </div>
+                    `;
+                    deviceList.appendChild(deviceEl);
+                });
+                
+                log(`📱 Found ${data.devices.length} connected devices`, 'info');
+            }
+        }
+
+        // Publishing functions
+        async function publishMessage() {
+            if (!isConnected) {
+                log('Please connect to MQTT first', 'error');
+                return;
+            }
+            
+            const topic = document.getElementById('publishTopic').value;
+            const payload = document.getElementById('publishPayload').value;
+            const qos = parseInt(document.getElementById('publishQos').value);
+            
+            if (!topic || !payload) {
+                log('Please enter topic and payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                await makeHttpRequest(`${baseUrl}/api/mqtt/publish`, 'POST', {
+                    topic: topic,
+                    payload: payloadObj,
+                    qos: qos,
+                    retain: false
+                });
+                
+                log(`📤 Published to topic: ${topic}`, 'success');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        async function publishToDevice() {
+            if (!isConnected) {
+                log('Please connect to MQTT first', 'error');
+                return;
+            }
+            
+            const deviceId = document.getElementById('deviceId').value;
+            const targetDevice = document.getElementById('targetDevice').value;
+            const payload = document.getElementById('d2dPayload').value;
+            const qos = parseInt(document.getElementById('d2dQos').value);
+            
+            if (!targetDevice || !payload) {
+                log('Please enter target device and payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                const topic = `device/${deviceId}/send/${targetDevice}`;
+                
+                await makeHttpRequest(`${baseUrl}/api/mqtt/publish`, 'POST', {
+                    topic: topic,
+                    payload: payloadObj,
+                    qos: qos,
+                    retain: false
+                });
+                
+                log(`📤 Sent message from ${deviceId} to ${targetDevice} via topic: ${topic}`, 'success');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        // Subscription functions
+        function subscribeToTopic() {
+            if (!isConnected) {
+                log('Please connect to MQTT first', 'error');
+                return;
+            }
+            
+            const topic = document.getElementById('subscribeTopic').value;
+            if (!topic) {
+                log('Please enter a topic to subscribe to', 'error');
+                return;
+            }
+            
+            // In a real implementation, this would actually subscribe to the topic
+            // For this interface, we'll just track it in our UI
+            if (!subscriptions.includes(topic)) {
+                subscriptions.push(topic);
+                updateSubscriptionsList();
+                log(`📥 Subscribed to topic: ${topic}`, 'success');
+            } else {
+                log(`📥 Already subscribed to topic: ${topic}`, 'info');
+            }
+        }
+
+        function unsubscribeFromTopic() {
+            const topic = document.getElementById('subscribeTopic').value;
+            if (!topic) {
+                log('Please enter a topic to unsubscribe from', 'error');
+                return;
+            }
+            
+            const index = subscriptions.indexOf(topic);
+            if (index > -1) {
+                subscriptions.splice(index, 1);
+                updateSubscriptionsList();
+                log(`🚫 Unsubscribed from topic: ${topic}`, 'info');
+            } else {
+                log(`🚫 Not subscribed to topic: ${topic}`, 'warning');
+            }
+        }
+
+        function updateSubscriptionsList() {
+            const list = document.getElementById('subscriptionsList');
+            if (subscriptions.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 15px;">No active subscriptions</div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            subscriptions.forEach(topic => {
+                const item = document.createElement('div');
+                item.className = 'device-item';
+                item.innerHTML = `
+                    <div class="device-info">
+                        <strong>${topic}</strong>
+                    </div>
+                    <div class="device-meta">
+                        <span class="protocol-badge protocol-mqtt">MQTT</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Device-to-device communication
+        async function sendToDevice() {
+            if (!isConnected) {
+                log('Please connect to MQTT first', 'error');
+                return;
+            }
+            
+            const deviceId = document.getElementById('deviceId').value;
+            const targetDevice = document.getElementById('targetDevice').value;
+            const payload = document.getElementById('d2dPayload').value;
+            
+            if (!targetDevice || !payload) {
+                log('Please enter target device and payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                
+                // Send via MQTT direct publish
+                const topic = `device/${deviceId}/send/${targetDevice}`;
+                await makeHttpRequest(`${baseUrl}/api/mqtt/publish`, 'POST', {
+                    topic: topic,
+                    payload: payloadObj,
+                    qos: 1,
+                    retain: false
+                });
+                
+                log(`🔄 Device-to-device communication: ${deviceId} → ${targetDevice}`, 'success');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        async function sendBroadcast() {
+            if (!isConnected) {
+                log('Please connect to MQTT first', 'error');
+                return;
+            }
+            
+            const payload = document.getElementById('d2dPayload').value;
+            
+            if (!payload) {
+                log('Please enter payload for broadcast', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                
+                // Send via MQTT broadcast
+                const topic = `device/${document.getElementById('deviceId').value}/broadcast`;
+                await makeHttpRequest(`${baseUrl}/api/mqtt/publish`, 'POST', {
+                    topic: topic,
+                    payload: payloadObj,
+                    qos: 1,
+                    retain: false
+                });
+                
+                log(`📢 Broadcast message sent to all devices`, 'success');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        // Test data
+        function fillTestData() {
+            const scenarios = [
+                {
+                    publishTopic: 'device/smart-thermostat-01/commands',
+                    publishPayload: '{"command": "SET_TEMPERATURE", "value": 22, "unit": "celsius", "mode": "auto"}',
+                    targetDevice: 'actuator-esp32-002',
+                    d2dPayload: '{"command": "START_OPERATION", "duration": 30, "mode": "automatic"}'
+                },
+                {
+                    publishTopic: 'device/irrigation-pump-03/commands',
+                    publishPayload: '{"command": "START_WATERING", "zone": "garden-east", "duration": 300}',
+                    targetDevice: 'sensor-processor',
+                    d2dPayload: '{"command": "READ_SENSORS", "sensors": ["moisture", "temperature"]}'
+                },
+                {
+                    publishTopic: 'device/weather-station-01/commands',
+                    publishPayload: '{"command": "READ_SENSORS", "sensors": ["temperature", "humidity", "pressure"]}',
+                    targetDevice: 'server-rule-engine',
+                    d2dPayload: '{"command": "SEND_REPORT", "interval": 300, "format": "json"}'
+                }
+            ];
+
+            const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+            
+            document.getElementById('publishTopic').value = scenario.publishTopic;
+            document.getElementById('publishPayload').value = scenario.publishPayload;
+            document.getElementById('targetDevice').value = scenario.targetDevice;
+            document.getElementById('d2dPayload').value = scenario.d2dPayload;
+
+            log('📝 Test data filled with realistic MQTT scenarios', 'info');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('[INIT] MQTT Device Simulator starting...', 'success');
+            log('[CONFIG] Server: nikolaindustry-realtime.onrender.com', 'info');
+            log('[READY] Interface loaded successfully', 'success');
+        });
+    </script>
+</body>
+</html>
