@@ -2,6 +2,16 @@ const WebSocket = require('ws');
 
 const devices = new Map(); // Store connected devices
 
+// Import MQTT forwarding functions (will be available after mqtt.js is loaded)
+let forwardWebSocketToMqtt = null;
+let broadcastToAllProtocols = null;
+
+// Set MQTT forwarding functions (called from server.js after mqtt is initialized)
+function setMqttForwarders(forwardFn, broadcastFn) {
+    forwardWebSocketToMqtt = forwardFn;
+    broadcastToAllProtocols = broadcastFn;
+}
+
 function handleConnection(ws, req) {
     const params = new URLSearchParams(req.url.split('?')[1]);
     const deviceId = params.get('id');
@@ -45,6 +55,12 @@ function handleConnection(ws, req) {
                             console.log(`🚀 Sent command to ${targetId}:`, JSON.stringify(payload));
                         }
                     });
+                } else if (targetId && forwardWebSocketToMqtt) {
+                    // Try to forward to MQTT device if not found in WebSocket
+                    const forwarded = forwardWebSocketToMqtt(deviceId, targetId, payload);
+                    if (!forwarded) {
+                        console.error(`⚠️ Target device ${targetId} not found in WebSocket or MQTT.`);
+                    }
                 } else {
                     console.error(`⚠️ Target device ${targetId} not found.`);
                 }
@@ -64,12 +80,18 @@ function handleConnection(ws, req) {
                 ws.send(JSON.stringify({ type: 'connectedDevices', devices: connectedDevices }));
                 console.log("📡 Sent connected devices list");
             } else if (type === 'broadcast') {
-                devices.get(deviceId)?.forEach((conn) => {
-                    if (conn.readyState === WebSocket.OPEN) {
-                        conn.send(JSON.stringify({ from: deviceId, payload }));
-                        console.log(`📢 Broadcast message from ${deviceId}`);
-                    }
-                });
+                if (broadcastToAllProtocols) {
+                    // Use the unified broadcast function that handles both WebSocket and MQTT
+                    broadcastToAllProtocols(payload, deviceId);
+                } else {
+                    // Fallback to WebSocket only broadcast
+                    devices.get(deviceId)?.forEach((conn) => {
+                        if (conn.readyState === WebSocket.OPEN) {
+                            conn.send(JSON.stringify({ from: deviceId, payload }));
+                            console.log(`📢 Broadcast message from ${deviceId}`);
+                        }
+                    });
+                }
             } else if (Array.isArray(targetIds)) {
                 targetIds.forEach((id) => {
                     if (devices.has(id)) {
@@ -79,6 +101,12 @@ function handleConnection(ws, req) {
                                 console.log(`📨 Message forwarded from ${deviceId} to ${id}`);
                             }
                         });
+                    } else if (forwardWebSocketToMqtt) {
+                        // Try to forward to MQTT device if not found in WebSocket
+                        const forwarded = forwardWebSocketToMqtt(deviceId, id, payload);
+                        if (!forwarded) {
+                            console.error(`⚠️ Target device ${id} is not found in WebSocket or MQTT.`);
+                        }
                     } else {
                         console.error(`⚠️ Target device ${id} is not found.`);
                     }
@@ -90,6 +118,12 @@ function handleConnection(ws, req) {
                         console.log(`📨 Message forwarded from ${deviceId} to ${targetId}`);
                     }
                 });
+            } else if (targetId && forwardWebSocketToMqtt) {
+                // Try to forward to MQTT device if not found in WebSocket
+                const forwarded = forwardWebSocketToMqtt(deviceId, targetId, payload);
+                if (!forwarded) {
+                    console.error(`⚠️ Target device ${targetId} is not found in WebSocket or MQTT.`);
+                }
             } else {
                 // const response = JSON.stringify({ message: "✅ Message received but no action taken" });
                 // ws.send(response);
@@ -108,4 +142,4 @@ function handleConnection(ws, req) {
     });
 }
 
-module.exports = { handleConnection, devices };
+module.exports = { handleConnection, devices, setMqttForwarders };
