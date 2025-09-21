@@ -79,6 +79,26 @@
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
         }
+        
+        .admin-badge {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: #2563eb;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            z-index: 1001;
+            transition: all 0.3s;
+        }
+        
+        .admin-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -87,6 +107,7 @@
         <div class="nav-links">
             <a href="/test-interface.html" target="_blank">🧪 Protocol Tester</a>
             <a href="/api/devices" target="_blank">📱 Device API</a>
+            <a href="/admin-dashboard.html" target="_blank">📊 Admin Dashboard</a>
             <a href="https://github.com/nikolaindustry" target="_blank">📚 Documentation</a>
         </div>
     </div>
@@ -95,6 +116,10 @@
     
     <a href="/test-interface.html" class="test-badge" target="_blank">
         🧪 Test All Protocols
+    </a>
+    
+    <a href="/admin-dashboard.html" class="admin-badge" target="_blank">
+        📊 Monitoring Dashboard
     </a>
 </body>
 </html>
