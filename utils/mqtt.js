@@ -151,6 +151,19 @@ function forwardWebSocketToMqtt(fromDeviceId, targetId, payload) {
     return false;
 }
 
+// Get MQTT topic information
+function getMqttTopics() {
+    const topics = [];
+    for (const [topic, subscriptions] of Object.entries(aedes.subscriptions)) {
+        topics.push({
+            topic: topic,
+            subscribers: subscriptions.length,
+            lastMessage: 'N/A' // Would need to track this separately
+        });
+    }
+    return topics;
+}
+
 // MQTT Event Handlers
 aedes.on('client', (client) => {
     console.log(`🔗 MQTT Client ${client.id} connected`);
@@ -279,5 +292,6 @@ module.exports = {
     forwardMqttToWebSocket,
     forwardWebSocketToMqtt,
     mqttDevices,
-    aedes
+    aedes,
+    getMqttTopics
 };
