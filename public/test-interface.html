@@ -49,12 +49,16 @@
             grid-template-columns: 1fr 1fr;
             gap: 30px;
             padding: 30px;
+            height: calc(100vh - 200px);
+            overflow: hidden;
         }
 
         .control-panel {
             background: #f8f9fa;
             border-radius: 10px;
             padding: 25px;
+            overflow-y: auto;
+            height: 100%;
         }
 
         .logs-panel {
@@ -63,8 +67,19 @@
             padding: 25px;
             color: #00ff00;
             font-family: 'Courier New', monospace;
-            max-height: 600px;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logs-content {
+            flex: 1;
             overflow-y: auto;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            background: #0a0a0a;
         }
 
         .section {
@@ -220,8 +235,49 @@
             z-index: 1000;
         }
 
+        .simulation-section {
+            background: linear-gradient(135deg, #ffd43b 0%, #ffb347 100%);
+            color: #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .simulation-section h3 {
+            color: #333 !important;
+            border-bottom: 2px solid #ff8c00 !important;
+        }
+
+        .device-simulator {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .device-box {
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            padding: 15px;
+            border: 2px solid #ff8c00;
+        }
+
+        .device-box h4 {
+            margin: 0 0 10px 0;
+            color: #ff8c00;
+        }
+
         @media (max-width: 1200px) {
             .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .logs-panel {
+                height: 400px;
+            }
+            
+            .device-simulator {
                 grid-template-columns: 1fr;
             }
         }
@@ -246,12 +302,52 @@
                     <h3>🔌 WebSocket Connection</h3>
                     <div class="form-group">
                         <label for="deviceId">Your Device ID:</label>
-                        <input type="text" id="deviceId" value="web-tester-001" placeholder="Enter your device ID">
+                        <input type="text" id="deviceId" value="web-tester-001">
                     </div>
                     <button class="btn" onclick="connectWebSocket()">Connect WebSocket</button>
                     <button class="btn btn-danger" onclick="disconnectWebSocket()">Disconnect</button>
                 </div>
 
+                <!-- Device Simulation -->
+                <div class="section simulation-section">
+                    <h3>🎭 Device Simulation</h3>
+                    <p>Simulate sending and receiving devices for testing</p>
+                    <div class="device-simulator">
+                        <div class="device-box">
+                            <h4>📤 Sending Device</h4>
+                            <div class="form-group">
+                                <label>Device Type:</label>
+                                <select id="senderType">
+                                    <option value="websocket">WebSocket Device</option>
+                                    <option value="mqtt">MQTT Device</option>
+                                    <option value="http">HTTP Client</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Device ID:</label>
+                                <input type="text" id="senderId" value="sensor-esp32-001">
+                            </div>
+                        </div>
+                        <div class="device-box">
+                            <h4>📥 Receiving Device</h4>
+                            <div class="form-group">
+                                <label>Device Type:</label>
+                                <select id="receiverType">
+                                    <option value="websocket">WebSocket Device</option>
+                                    <option value="mqtt">MQTT Device</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Device ID:</label>
+                                <input type="text" id="receiverId" value="actuator-esp32-002">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button class="btn" onclick="simulateDeviceCommunication()">🎬 Simulate Communication</button>
+                        <button class="btn btn-info" onclick="fillTestData()">📝 Fill Test Data</button>
+                    </div>
+                </div>
                 <!-- Connected Devices -->
                 <div class="section">
                     <h3>📱 Connected Devices</h3>
@@ -266,11 +362,11 @@
                     <h3>🌐 HTTP API Tests</h3>
                     <div class="form-group">
                         <label for="httpTargetDevice">Target Device ID:</label>
-                        <input type="text" id="httpTargetDevice" placeholder="esp32-001">
+                        <input type="text" id="httpTargetDevice" value="esp32-001">
                     </div>
                     <div class="form-group">
                         <label for="httpPayload">Payload (JSON):</label>
-                        <textarea id="httpPayload" class="json-input" placeholder='{"command": "TURN_ON", "pin": 2}'></textarea>
+                        <textarea id="httpPayload" class="json-input">{"command": "TURN_ON", "pin": 2, "timestamp": "2024-01-01T10:00:00Z"}</textarea>
                     </div>
                     <button class="btn" onclick="sendHttpMessage()">Send HTTP → Device</button>
                     <button class="btn btn-success" onclick="sendHttpBroadcast()">HTTP Broadcast</button>
@@ -282,11 +378,11 @@
                     <h3>⚡ WebSocket Tests</h3>
                     <div class="form-group">
                         <label for="wsTargetDevice">Target Device ID:</label>
-                        <input type="text" id="wsTargetDevice" placeholder="esp32-001">
+                        <input type="text" id="wsTargetDevice" value="esp32-002">
                     </div>
                     <div class="form-group">
                         <label for="wsPayload">Payload (JSON):</label>
-                        <textarea id="wsPayload" class="json-input" placeholder='{"command": "READ_SENSOR", "pin": 36}'></textarea>
+                        <textarea id="wsPayload" class="json-input">{"command": "READ_SENSOR", "pin": 36, "type": "temperature"}</textarea>
                     </div>
                     <button class="btn" onclick="sendWebSocketMessage()">Send WebSocket → Device</button>
                     <button class="btn btn-success" onclick="sendWebSocketBroadcast()">WebSocket Broadcast</button>
@@ -298,11 +394,11 @@
                     <h3>📡 MQTT Direct Publish</h3>
                     <div class="form-group">
                         <label for="mqttTopic">MQTT Topic:</label>
-                        <input type="text" id="mqttTopic" placeholder="device/esp32-001/commands">
+                        <input type="text" id="mqttTopic" value="device/esp32-003/commands">
                     </div>
                     <div class="form-group">
                         <label for="mqttPayload">Payload (JSON):</label>
-                        <textarea id="mqttPayload" class="json-input" placeholder='{"command": "START_PUMP", "duration": 30}'></textarea>
+                        <textarea id="mqttPayload" class="json-input">{"command": "START_PUMP", "duration": 30, "pressure": "medium"}</textarea>
                     </div>
                     <button class="btn" onclick="publishMqttDirect()">Publish to MQTT Topic</button>
                     <button class="btn btn-info" onclick="getMqttStats()">Get MQTT Stats</button>
@@ -319,7 +415,7 @@
 
             <div class="logs-panel">
                 <h3 style="color: #00ff88; margin-bottom: 15px;">📊 Communication Logs</h3>
-                <div id="logs">
+                <div class="logs-content" id="logs">
                     <div class="log-info">Ready to test communication protocols...</div>
                     <div class="log-info">Connect WebSocket to start testing</div>
                 </div>
@@ -342,6 +438,8 @@
             logEntry.className = `log-entry log-${type}`;
             logEntry.innerHTML = `[${timestamp}] ${message}`;
             logs.appendChild(logEntry);
+            
+            // Auto-scroll to bottom
             logs.scrollTop = logs.scrollHeight;
         }
 
@@ -698,6 +796,113 @@
 
         // Auto-refresh devices every 30 seconds
         setInterval(refreshDevices, 30000);
+
+        // Device simulation functions
+        function simulateDeviceCommunication() {
+            const senderType = document.getElementById('senderType').value;
+            const senderId = document.getElementById('senderId').value;
+            const receiverType = document.getElementById('receiverType').value;
+            const receiverId = document.getElementById('receiverId').value;
+
+            if (!senderId || !receiverId) {
+                log('Please enter both sender and receiver device IDs', 'error');
+                return;
+            }
+
+            log(`🎬 Starting simulation: ${senderType.toUpperCase()} device "${senderId}" → ${receiverType.toUpperCase()} device "${receiverId}"`, 'info');
+
+            // Create realistic payload based on device types
+            const payload = {
+                command: "SENSOR_DATA",
+                sensor_type: "temperature",
+                value: Math.round(20 + Math.random() * 15), // 20-35°C
+                unit: "celsius",
+                timestamp: new Date().toISOString(),
+                from_device: senderId,
+                device_type: senderType
+            };
+
+            // Simulate based on sender type
+            switch(senderType) {
+                case 'websocket':
+                    if (isConnected) {
+                        const message = {
+                            targetId: receiverId,
+                            payload: payload
+                        };
+                        ws.send(JSON.stringify(message));
+                        log(`📤 WebSocket simulation sent: ${senderId} → ${receiverId}`, 'success');
+                    } else {
+                        log('WebSocket not connected for simulation', 'error');
+                    }
+                    break;
+                    
+                case 'mqtt':
+                    const topic = `device/${senderId}/send/${receiverId}`;
+                    makeHttpRequest(`${baseUrl}/api/mqtt/publish`, 'POST', {
+                        topic: topic,
+                        payload: payload,
+                        qos: 1
+                    });
+                    log(`📤 MQTT simulation sent: ${senderId} → ${receiverId} (via topic: ${topic})`, 'success');
+                    break;
+                    
+                case 'http':
+                    makeHttpRequest(`${baseUrl}/api/send/${receiverId}`, 'POST', {
+                        payload: payload
+                    });
+                    log(`📤 HTTP simulation sent: ${senderId} → ${receiverId}`, 'success');
+                    break;
+            }
+
+            // Show expected receiver behavior
+            setTimeout(() => {
+                log(`📥 Expected: ${receiverType.toUpperCase()} device "${receiverId}" should receive message`, 'info');
+                log(`🔄 Simulation complete: Cross-protocol communication ${senderType} → ${receiverType}`, 'success');
+            }, 1000);
+        }
+
+        function fillTestData() {
+            // Fill forms with realistic test data
+            const scenarios = [
+                {
+                    httpTarget: 'smart-thermostat-01',
+                    httpPayload: '{"command": "SET_TEMPERATURE", "value": 22, "unit": "celsius", "mode": "auto"}',
+                    wsTarget: 'security-camera-02', 
+                    wsPayload: '{"command": "START_RECORDING", "duration": 60, "quality": "HD"}',
+                    mqttTopic: 'device/irrigation-pump-03/commands',
+                    mqttPayload: '{"command": "START_WATERING", "zone": "garden-east", "duration": 300}'
+                },
+                {
+                    httpTarget: 'led-strip-kitchen',
+                    httpPayload: '{"command": "SET_COLOR", "red": 255, "green": 100, "blue": 50, "brightness": 80}',
+                    wsTarget: 'door-lock-main',
+                    wsPayload: '{"command": "LOCK_DOOR", "user_id": "admin", "access_code": "1234"}',
+                    mqttTopic: 'device/weather-station-01/commands',
+                    mqttPayload: '{"command": "READ_SENSORS", "sensors": ["temperature", "humidity", "pressure"]}'
+                },
+                {
+                    httpTarget: 'garage-door-opener',
+                    httpPayload: '{"command": "OPEN_DOOR", "safety_check": true, "timeout": 30}',
+                    wsTarget: 'air-conditioner-01',
+                    wsPayload: '{"command": "SET_MODE", "mode": "cool", "temperature": 24, "fan_speed": "medium"}',
+                    mqttTopic: 'device/solar-panel-monitor/commands', 
+                    mqttPayload: '{"command": "GET_PRODUCTION", "period": "today", "include_forecast": true}'
+                }
+            ];
+
+            const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+            
+            document.getElementById('httpTargetDevice').value = scenario.httpTarget;
+            document.getElementById('httpPayload').value = scenario.httpPayload;
+            document.getElementById('wsTargetDevice').value = scenario.wsTarget;
+            document.getElementById('wsPayload').value = scenario.wsPayload;
+            document.getElementById('mqttTopic').value = scenario.mqttTopic;
+            document.getElementById('mqttPayload').value = scenario.mqttPayload;
+
+            log('📝 Test data filled with realistic IoT scenario', 'info');
+            log(`Scenario: Smart home/industrial automation commands loaded`, 'info');
+        }
     </script>
 </body>
 </html>
