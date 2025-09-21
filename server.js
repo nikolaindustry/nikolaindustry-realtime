@@ -2,7 +2,8 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const WebSocket = require('ws');
-const { handleConnection } = require('./utils/websocket');
+const { handleConnection, setMqttForwarders } = require('./utils/websocket');
+const { setupMQTT, forwardWebSocketToMqtt, broadcastToAll } = require('./utils/mqtt');
 const apiRoutes = require('./routes/api');
 
 const app = express();
@@ -18,5 +19,16 @@ app.use('/api', apiRoutes);
 
 wss.on('connection', handleConnection);
 
+// Setup MQTT
+setupMQTT(server);
+
+// Connect WebSocket and MQTT forwarding
+setMqttForwarders(forwardWebSocketToMqtt, broadcastToAll);
+
 const port = process.env.PORT || 3000;
-server.listen(port, () => console.log(`Server running on port ${port}`));
+server.listen(port, () => {
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`🔌 WebSocket available at ws://localhost:${port}`);
+    console.log(`🌐 HTTP API available at http://localhost:${port}/api`);
+    console.log(`🦟 MQTT available at mqtt://localhost:${process.env.MQTT_PORT || 1883}`);
+});
