@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protocol Communication Tester - NIKOLAINDUSTRY</title>
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #0f172a;
+            --dark-surface: #1e293b;
+            --light-bg: #f8fafc;
+            --light-surface: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,62 +33,127 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--light-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
             min-height: 100vh;
-            padding: 20px;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--light-bg);
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .app-header {
+            background: var(--light-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            z-index: 1000;
+        }
+
+        .app-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-header .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .app-header .logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 30px;
-            text-align: center;
+            font-size: 16px;
         }
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            font-weight: 500;
         }
 
-        .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
         }
 
-        .main-content {
+        .status-online { background: var(--success-color); }
+        .status-offline { background: var(--danger-color); }
+        .status-connecting { background: var(--warning-color); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .app-content {
+            flex: 1;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            padding: 30px;
-            height: calc(100vh - 200px);
+            grid-template-columns: 1fr 400px;
+            gap: 0;
             overflow: hidden;
         }
 
-        .control-panel {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 25px;
+        .main-panel {
+            background: var(--light-surface);
+            border-right: 1px solid var(--border-color);
             overflow-y: auto;
-            height: 100%;
+            padding: 24px;
         }
 
-        .logs-panel {
-            background: #1a1a1a;
-            border-radius: 10px;
-            padding: 25px;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            height: 100%;
+        .sidebar-panel {
+            background: var(--dark-bg);
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #334155;
+            background: var(--dark-surface);
+        }
+
+        .sidebar-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .logs-container {
+            flex: 1;
+            padding: 20px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -75,351 +161,575 @@
 
         .logs-content {
             flex: 1;
-            overflow-y: auto;
-            border: 1px solid #333;
-            border-radius: 5px;
-            padding: 15px;
-            background: #0a0a0a;
-        }
-
-        .section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: white;
+            background: #020617;
+            border: 1px solid #334155;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 16px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.5;
         }
 
-        .section h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 8px;
+        .section-card {
+            background: var(--light-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .section-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .section-header {
+            background: var(--light-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .section-header .section-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
-        .form-group label {
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 13px;
         }
 
-        .form-group input, .form-group select, .form-group textarea {
+        .form-input, .form-select, .form-textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 6px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.3s;
+            font-family: inherit;
+            background: var(--light-surface);
+            transition: all 0.2s ease;
         }
 
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
         }
 
-        .form-group textarea {
-            height: 100px;
+        .form-textarea {
+            min-height: 80px;
             resize: vertical;
-            font-family: 'Courier New', monospace;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            background: #fafbfc;
+            border: 1px solid #d1d5db;
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            margin-right: 8px;
+            margin-bottom: 8px;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn:active {
             transform: translateY(0);
         }
 
-        .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            background: var(--success-color);
         }
 
-        .btn-info {
-            background: linear-gradient(135deg, #339af0 0%, #228be6 100%);
+        .btn-success:hover {
+            background: #059669;
         }
 
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
+        .btn-warning {
+            background: var(--warning-color);
         }
 
-        .status-online { background: #51cf66; }
-        .status-offline { background: #ff6b6b; }
-        .status-connecting { background: #ffd43b; }
-
-        .device-list {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-            max-height: 200px;
-            overflow-y: auto;
+        .btn-warning:hover {
+            background: #d97706;
         }
 
-        .device-item {
-            padding: 8px 12px;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            background: #f8f9fa;
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-group {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .protocol-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            color: white;
-            margin-left: 5px;
+        .simulation-card {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            color: #92400e;
         }
 
-        .protocol-websocket { background: #339af0; }
-        .protocol-mqtt { background: #51cf66; }
-        .protocol-hybrid { background: #fd7e14; }
-
-        .log-entry {
-            margin-bottom: 5px;
-            padding: 5px;
-            border-radius: 3px;
-        }
-
-        .log-info { color: #00ff00; }
-        .log-success { color: #00ff88; }
-        .log-error { color: #ff4444; }
-        .log-warning { color: #ffaa00; }
-
-        .json-input {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            border: 1px solid #555;
-        }
-
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            border-radius: 25px;
-            color: white;
-            font-weight: 600;
-            z-index: 1000;
-        }
-
-        .simulation-section {
-            background: linear-gradient(135deg, #ffd43b 0%, #ffb347 100%);
-            color: #333;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .simulation-section h3 {
-            color: #333 !important;
-            border-bottom: 2px solid #ff8c00 !important;
+        .simulation-card .section-header {
+            background: rgba(245, 158, 11, 0.1);
+            border-bottom-color: #f59e0b;
         }
 
         .device-simulator {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
         .device-box {
-            background: rgba(255,255,255,0.9);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(245, 158, 11, 0.3);
             border-radius: 8px;
-            padding: 15px;
-            border: 2px solid #ff8c00;
+            padding: 16px;
         }
 
         .device-box h4 {
-            margin: 0 0 10px 0;
-            color: #ff8c00;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #92400e;
+        }
+
+        .device-list {
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .device-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .device-item:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .device-item:last-child {
+            border-bottom: none;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .device-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .protocol-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .protocol-websocket { background: var(--primary-color); }
+        .protocol-mqtt { background: var(--success-color); }
+        .protocol-hybrid { background: var(--warning-color); }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 4px 0;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .log-info { color: #22d3ee; }
+        .log-success { color: #34d399; }
+        .log-error { color: #fb7185; }
+        .log-warning { color: #fbbf24; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-color: var(--primary-color);
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-color: var(--success-color);
+            color: #166534;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: var(--warning-color);
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-color: var(--danger-color);
+            color: #991b1b;
         }
 
         @media (max-width: 1200px) {
-            .main-content {
+            .app-content {
                 grid-template-columns: 1fr;
-                height: auto;
+                grid-template-rows: 1fr 300px;
             }
             
-            .logs-panel {
-                height: 400px;
+            .form-grid {
+                grid-template-columns: 1fr;
             }
             
             .device-simulator {
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .main-panel {
+                padding: 16px;
+            }
+            
+            .app-header .logo h1 {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Protocol Communication Tester</h1>
-            <p>Test all HTTP, WebSocket, and MQTT communication combinations</p>
-        </div>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">🚀</div>
+                <h1>Protocol Communication Console</h1>
+            </div>
+            <div class="connection-indicator" id="connectionStatus">
+                <div class="status-dot status-offline"></div>
+                Disconnected
+            </div>
+        </header>
 
-        <div class="connection-status" id="connectionStatus">
-            <span class="status-indicator status-offline"></span>
-            Disconnected
-        </div>
-
-        <div class="main-content">
-            <div class="control-panel">
-                <!-- WebSocket Connection -->
-                <div class="section">
-                    <h3>🔌 WebSocket Connection</h3>
-                    <div class="form-group">
-                        <label for="deviceId">Your Device ID:</label>
-                        <input type="text" id="deviceId" value="web-tester-001">
+        <div class="app-content">
+            <main class="main-panel">
+                <!-- Connection Management -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">🔌</div>
+                        <h3>Connection Management</h3>
                     </div>
-                    <button class="btn" onclick="connectWebSocket()">Connect WebSocket</button>
-                    <button class="btn btn-danger" onclick="disconnectWebSocket()">Disconnect</button>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="deviceId">Device Identifier</label>
+                                <input type="text" id="deviceId" class="form-input" value="web-tester-001">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Connection Status</label>
+                                <div class="btn-group">
+                                    <button class="btn" onclick="connectWebSocket()">Connect</button>
+                                    <button class="btn btn-outline" onclick="disconnectWebSocket()">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Device Simulation -->
-                <div class="section simulation-section">
-                    <h3>🎭 Device Simulation</h3>
-                    <p>Simulate sending and receiving devices for testing</p>
-                    <div class="device-simulator">
-                        <div class="device-box">
-                            <h4>📤 Sending Device</h4>
-                            <div class="form-group">
-                                <label>Device Type:</label>
-                                <select id="senderType">
-                                    <option value="websocket">WebSocket Device</option>
-                                    <option value="mqtt">MQTT Device</option>
-                                    <option value="http">HTTP Client</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Device ID:</label>
-                                <input type="text" id="senderId" value="sensor-esp32-001">
-                            </div>
-                        </div>
-                        <div class="device-box">
-                            <h4>📥 Receiving Device</h4>
-                            <div class="form-group">
-                                <label>Device Type:</label>
-                                <select id="receiverType">
-                                    <option value="websocket">WebSocket Device</option>
-                                    <option value="mqtt">MQTT Device</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Device ID:</label>
-                                <input type="text" id="receiverId" value="actuator-esp32-002">
-                            </div>
-                        </div>
+                <div class="section-card simulation-card">
+                    <div class="section-header">
+                        <div class="section-icon">🎭</div>
+                        <h3>Device Communication Simulator</h3>
                     </div>
-                    <div style="margin-top: 15px; text-align: center;">
-                        <button class="btn" onclick="simulateDeviceCommunication()">🎬 Simulate Communication</button>
-                        <button class="btn btn-info" onclick="fillTestData()">📝 Fill Test Data</button>
+                    <div class="section-content">
+                        <div class="alert alert-info">
+                            <strong>Simulation Mode:</strong> Test cross-protocol communication between different device types
+                        </div>
+                        <div class="device-simulator">
+                            <div class="device-box">
+                                <h4>📤 Sender Configuration</h4>
+                                <div class="form-group">
+                                    <label class="form-label">Protocol Type</label>
+                                    <select id="senderType" class="form-select">
+                                        <option value="websocket">WebSocket Device</option>
+                                        <option value="mqtt">MQTT Device</option>
+                                        <option value="http">HTTP Client</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Device ID</label>
+                                    <input type="text" id="senderId" class="form-input" value="sensor-esp32-001">
+                                </div>
+                            </div>
+                            <div class="device-box">
+                                <h4>📥 Receiver Configuration</h4>
+                                <div class="form-group">
+                                    <label class="form-label">Protocol Type</label>
+                                    <select id="receiverType" class="form-select">
+                                        <option value="websocket">WebSocket Device</option>
+                                        <option value="mqtt">MQTT Device</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Device ID</label>
+                                    <input type="text" id="receiverId" class="form-input" value="actuator-esp32-002">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-warning" onclick="simulateDeviceCommunication()">🎬 Run Simulation</button>
+                            <button class="btn btn-outline" onclick="fillTestData()">📝 Load Test Data</button>
+                        </div>
                     </div>
                 </div>
+
                 <!-- Connected Devices -->
-                <div class="section">
-                    <h3>📱 Connected Devices</h3>
-                    <button class="btn btn-info" onclick="refreshDevices()">Refresh Devices</button>
-                    <div class="device-list" id="deviceList">
-                        <div style="text-align: center; color: #666;">Click refresh to load devices</div>
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">📱</div>
+                        <h3>Device Registry</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="refreshDevices()">🔄 Refresh</button>
+                        </div>
+                        <div class="device-list" id="deviceList">
+                            <div style="text-align: center; color: var(--text-muted); padding: 20px;">Click refresh to discover devices</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- HTTP API Tests -->
-                <div class="section">
-                    <h3>🌐 HTTP API Tests</h3>
-                    <div class="form-group">
-                        <label for="httpTargetDevice">Target Device ID:</label>
-                        <input type="text" id="httpTargetDevice" value="esp32-001">
+                <!-- HTTP API Testing -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">🌐</div>
+                        <h3>HTTP API Interface</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="httpPayload">Payload (JSON):</label>
-                        <textarea id="httpPayload" class="json-input">{"command": "TURN_ON", "pin": 2, "timestamp": "2024-01-01T10:00:00Z"}</textarea>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="httpTargetDevice">Target Device</label>
+                                <input type="text" id="httpTargetDevice" class="form-input" value="esp32-001">
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label" for="httpPayload">JSON Payload</label>
+                                <textarea id="httpPayload" class="form-textarea">{"command": "TURN_ON", "pin": 2, "timestamp": "2024-01-01T10:00:00Z"}</textarea>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="sendHttpMessage()">📤 Send Message</button>
+                            <button class="btn btn-success" onclick="sendHttpBroadcast()">📢 Broadcast</button>
+                            <button class="btn btn-secondary" onclick="sendHttpBatch()">📦 Batch Send</button>
+                        </div>
                     </div>
-                    <button class="btn" onclick="sendHttpMessage()">Send HTTP → Device</button>
-                    <button class="btn btn-success" onclick="sendHttpBroadcast()">HTTP Broadcast</button>
-                    <button class="btn btn-info" onclick="sendHttpBatch()">HTTP Batch</button>
                 </div>
 
-                <!-- WebSocket Tests -->
-                <div class="section">
-                    <h3>⚡ WebSocket Tests</h3>
-                    <div class="form-group">
-                        <label for="wsTargetDevice">Target Device ID:</label>
-                        <input type="text" id="wsTargetDevice" value="esp32-002">
+                <!-- WebSocket Testing -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">⚡</div>
+                        <h3>WebSocket Interface</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="wsPayload">Payload (JSON):</label>
-                        <textarea id="wsPayload" class="json-input">{"command": "READ_SENSOR", "pin": 36, "type": "temperature"}</textarea>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="wsTargetDevice">Target Device</label>
+                                <input type="text" id="wsTargetDevice" class="form-input" value="esp32-002">
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label" for="wsPayload">JSON Payload</label>
+                                <textarea id="wsPayload" class="form-textarea">{"command": "READ_SENSOR", "pin": 36, "type": "temperature"}</textarea>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="sendWebSocketMessage()">📤 Send Message</button>
+                            <button class="btn btn-success" onclick="sendWebSocketBroadcast()">📢 Broadcast</button>
+                            <button class="btn btn-secondary" onclick="sendWebSocketBatch()">📦 Batch Send</button>
+                        </div>
                     </div>
-                    <button class="btn" onclick="sendWebSocketMessage()">Send WebSocket → Device</button>
-                    <button class="btn btn-success" onclick="sendWebSocketBroadcast()">WebSocket Broadcast</button>
-                    <button class="btn btn-info" onclick="sendWebSocketBatch()">WebSocket Batch</button>
                 </div>
 
-                <!-- MQTT Direct Publish -->
-                <div class="section">
-                    <h3>📡 MQTT Direct Publish</h3>
-                    <div class="form-group">
-                        <label for="mqttTopic">MQTT Topic:</label>
-                        <input type="text" id="mqttTopic" value="device/esp32-003/commands">
+                <!-- MQTT Testing -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">📡</div>
+                        <h3>MQTT Broker Interface</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="mqttPayload">Payload (JSON):</label>
-                        <textarea id="mqttPayload" class="json-input">{"command": "START_PUMP", "duration": 30, "pressure": "medium"}</textarea>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="mqttTopic">Topic</label>
+                                <input type="text" id="mqttTopic" class="form-input" value="device/esp32-003/commands">
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label" for="mqttPayload">JSON Payload</label>
+                                <textarea id="mqttPayload" class="form-textarea">{"command": "START_PUMP", "duration": 30, "pressure": "medium"}</textarea>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn" onclick="publishMqttDirect()">📤 Publish</button>
+                            <button class="btn btn-secondary" onclick="getMqttStats()">📊 Broker Stats</button>
+                        </div>
                     </div>
-                    <button class="btn" onclick="publishMqttDirect()">Publish to MQTT Topic</button>
-                    <button class="btn btn-info" onclick="getMqttStats()">Get MQTT Stats</button>
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="section">
-                    <h3>⚡ Quick Test Actions</h3>
-                    <button class="btn btn-success" onclick="emergencyStop()">🛑 Emergency Stop All</button>
-                    <button class="btn btn-info" onclick="testAllProtocols()">🔄 Test All Protocols</button>
-                    <button class="btn" onclick="clearLogs()">🗑️ Clear Logs</button>
+                <!-- System Actions -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-icon">⚙️</div>
+                        <h3>System Operations</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="btn-group">
+                            <button class="btn btn-danger" onclick="emergencyStop()">🛑 Emergency Stop</button>
+                            <button class="btn btn-secondary" onclick="testAllProtocols()">🔄 Test All Protocols</button>
+                            <button class="btn btn-outline" onclick="clearLogs()">🗑️ Clear Logs</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </main>
 
-            <div class="logs-panel">
-                <h3 style="color: #00ff88; margin-bottom: 15px;">📊 Communication Logs</h3>
-                <div class="logs-content" id="logs">
-                    <div class="log-info">Ready to test communication protocols...</div>
-                    <div class="log-info">Connect WebSocket to start testing</div>
+            <aside class="sidebar-panel">
+                <div class="sidebar-header">
+                    <h3>System Monitor</h3>
+                    <p>Real-time communication logs and analytics</p>
                 </div>
-            </div>
+                <div class="logs-container">
+                    <div class="logs-content" id="logs">
+                        <div class="log-info">[SYSTEM] Protocol Communication Console initialized</div>
+                        <div class="log-info">[READY] Awaiting WebSocket connection...</div>
+                    </div>
+                </div>
+            </aside>
         </div>
     </div>
 
@@ -451,10 +761,10 @@
         // Connection status
         function updateConnectionStatus(status, message) {
             const statusEl = document.getElementById('connectionStatus');
-            const indicator = statusEl.querySelector('.span.status-indicator') || statusEl.querySelector('.status-indicator');
+            const indicator = statusEl.querySelector('.status-dot');
             
-            indicator.className = `status-indicator status-${status}`;
-            statusEl.innerHTML = `<span class="status-indicator status-${status}"></span>${message}`;
+            indicator.className = `status-dot status-${status}`;
+            statusEl.innerHTML = `<div class="status-dot status-${status}"></div>${message}`;
         }
 
         // WebSocket functions
@@ -558,13 +868,13 @@
                     ).join('');
                     
                     deviceEl.innerHTML = `
-                        <div>
-                            <span class="status-indicator status-${device.status}"></span>
-                            ${device.deviceId}
+                        <div class="device-info">
+                            <div class="status-dot status-${device.status}"></div>
+                            <strong>${device.deviceId}</strong>
                         </div>
-                        <div>
+                        <div class="device-meta">
                             ${protocols}
-                            <small>(${device.connections} conn)</small>
+                            <small style="color: var(--text-muted);">(${device.connections})</small>
                         </div>
                     `;
                     deviceList.appendChild(deviceEl);
@@ -789,8 +1099,9 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            log('🚀 Protocol Communication Tester loaded', 'success');
-            log('Ready to test all communication combinations!', 'info');
+            log('[INIT] Protocol Communication Console starting...', 'success');
+            log('[CONFIG] Server: nikolaindustry-realtime.onrender.com', 'info');
+            log('[READY] Interface loaded successfully', 'success');
             refreshDevices();
         });
 
@@ -809,7 +1120,7 @@
                 return;
             }
 
-            log(`🎬 Starting simulation: ${senderType.toUpperCase()} device "${senderId}" → ${receiverType.toUpperCase()} device "${receiverId}"`, 'info');
+            log(`🎬 Starting simulation: ${senderType.toUpperCase()}[${senderId}] → ${receiverType.toUpperCase()}[${receiverId}]`, 'info');
 
             // Create realistic payload based on device types
             const payload = {
@@ -819,7 +1130,8 @@
                 unit: "celsius",
                 timestamp: new Date().toISOString(),
                 from_device: senderId,
-                device_type: senderType
+                device_type: senderType,
+                simulation: true
             };
 
             // Simulate based on sender type
