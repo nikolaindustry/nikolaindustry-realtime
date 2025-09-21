@@ -244,6 +244,22 @@ router.get('/mqtt/stats', (req, res) => {
     }
 });
 
+// Get detailed MQTT topic information
+router.get('/mqtt/topics', (req, res) => {
+    try {
+        const { getMqttTopics } = require('../utils/mqtt');
+        const topics = getMqttTopics();
+        
+        res.json({
+            success: true,
+            topics: topics
+        });
+    } catch (error) {
+        console.error('Error getting MQTT topics:', error);
+        res.status(500).json({ error: 'Failed to get MQTT topics' });
+    }
+});
+
 // Publish to MQTT topic directly
 router.post('/mqtt/publish', (req, res) => {
     const { topic, payload, qos = 1, retain = false } = req.body;
@@ -270,6 +286,36 @@ router.post('/mqtt/publish', (req, res) => {
     } catch (error) {
         console.error('Error publishing to MQTT:', error);
         res.status(500).json({ error: 'Failed to publish to MQTT' });
+    }
+});
+
+// Get system statistics
+router.get('/stats', (req, res) => {
+    try {
+        const allDevices = getAllDevices();
+        
+        // Protocol breakdown
+        const protocolStats = {
+            websocket: 0,
+            mqtt: 0,
+            hybrid: 0
+        };
+        
+        allDevices.forEach((deviceInfo) => {
+            protocolStats[deviceInfo.type]++;
+        });
+        
+        res.json({
+            success: true,
+            stats: {
+                totalDevices: allDevices.size,
+                protocolBreakdown: protocolStats,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error getting system stats:', error);
+        res.status(500).json({ error: 'Failed to get system stats' });
     }
 });
 
