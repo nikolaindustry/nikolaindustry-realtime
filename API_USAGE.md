@@ -39,7 +39,7 @@ Send a message to a specific device by its ID.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:3000/api/send/esp32-001 \
+curl -X POST https://nikolaindustry-realtime.onrender.com/api/send/esp32-001 \
   -H "Content-Type: application/json" \
   -d '{"payload": {"command": "TURN_ON", "pin": 2}}'
 ```
