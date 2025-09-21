@@ -117,6 +117,7 @@
             grid-template-columns: 1fr 400px;
             gap: 0;
             overflow: hidden;
+            height: calc(100vh - 73px); /* Subtract header height */
         }
 
         .main-panel {
@@ -131,6 +132,8 @@
             color: #e2e8f0;
             display: flex;
             flex-direction: column;
+            height: 100%;
+            overflow: hidden;
         }
 
         .sidebar-header {
@@ -157,6 +160,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            min-height: 0; /* Important for flexbox scrolling */
         }
 
         .logs-content {
@@ -169,6 +173,29 @@
             font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
             font-size: 12px;
             line-height: 1.5;
+            max-height: 100%;
+            min-height: 0; /* Important for flexbox scrolling */
+            /* Custom scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: #475569 #1e293b;
+        }
+
+        .logs-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .logs-content::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+
+        .logs-content::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        .logs-content::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
         }
 
         .section-card {
@@ -428,6 +455,8 @@
             padding: 4px 0;
             font-size: 11px;
             line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .log-info { color: #22d3ee; }
@@ -499,7 +528,12 @@
         @media (max-width: 1200px) {
             .app-content {
                 grid-template-columns: 1fr;
-                grid-template-rows: 1fr 300px;
+                grid-template-rows: 1fr 350px;
+                height: calc(100vh - 73px);
+            }
+            
+            .sidebar-panel {
+                height: 350px;
             }
             
             .form-grid {
@@ -722,6 +756,10 @@
                 <div class="sidebar-header">
                     <h3>System Monitor</h3>
                     <p>Real-time communication logs and analytics</p>
+                    <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #94a3b8;">
+                        <span>• Auto-scroll enabled</span>
+                        <span>• Live updates</span>
+                    </div>
                 </div>
                 <div class="logs-container">
                     <div class="logs-content" id="logs">
@@ -747,15 +785,27 @@
             const logEntry = document.createElement('div');
             logEntry.className = `log-entry log-${type}`;
             logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
             logs.appendChild(logEntry);
             
-            // Auto-scroll to bottom
-            logs.scrollTop = logs.scrollHeight;
+            // Force scroll to bottom with a small delay to ensure DOM is updated
+            requestAnimationFrame(() => {
+                logs.scrollTop = logs.scrollHeight;
+            });
+            
+            // Limit log entries to prevent memory issues (keep last 200 entries)
+            const entries = logs.children;
+            if (entries.length > 200) {
+                for (let i = 0; i < entries.length - 200; i++) {
+                    logs.removeChild(entries[0]);
+                }
+            }
         }
 
         function clearLogs() {
-            document.getElementById('logs').innerHTML = '';
-            log('Logs cleared', 'info');
+            const logs = document.getElementById('logs');
+            logs.innerHTML = '';
+            log('[SYSTEM] Logs cleared by user', 'info');
         }
 
         // Connection status
