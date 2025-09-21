@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 
 const devices = new Map(); // Store connected devices
+const adminConnections = new Set(); // Store admin dashboard connections
 
 // Import MQTT forwarding functions (will be available after mqtt.js is loaded)
 let forwardWebSocketToMqtt = null;
@@ -10,6 +11,33 @@ let broadcastToAllProtocols = null;
 function setMqttForwarders(forwardFn, broadcastFn) {
     forwardWebSocketToMqtt = forwardFn;
     broadcastToAllProtocols = broadcastFn;
+}
+
+// Handle admin dashboard connections
+function handleAdminConnection(ws) {
+    adminConnections.add(ws);
+    
+    ws.on('close', () => {
+        adminConnections.delete(ws);
+    });
+    
+    ws.on('error', () => {
+        adminConnections.delete(ws);
+    });
+}
+
+// Function to broadcast device status updates to admin dashboards
+function broadcastDeviceUpdates(updateData) {
+    const updateMessage = JSON.stringify({
+        type: 'deviceUpdate',
+        data: updateData
+    });
+    
+    adminConnections.forEach((adminWs) => {
+        if (adminWs.readyState === WebSocket.OPEN) {
+            adminWs.send(updateMessage);
+        }
+    });
 }
 
 function handleConnection(ws, req) {
@@ -28,6 +56,13 @@ function handleConnection(ws, req) {
         devices.set(deviceId, []);
     }
     devices.get(deviceId).push(ws);
+    
+    // Notify admin dashboards of new connection
+    broadcastDeviceUpdates({
+        event: 'deviceConnected',
+        deviceId: deviceId,
+        timestamp: new Date().toISOString()
+    });
 
     ws.on('message', (message) => {
         let decodedMessages;
@@ -139,7 +174,20 @@ function handleConnection(ws, req) {
         if (connections.length === 0) {
             devices.delete(deviceId);
         }
+        
+        // Notify admin dashboards of disconnection
+        broadcastDeviceUpdates({
+            event: 'deviceDisconnected',
+            deviceId: deviceId,
+            timestamp: new Date().toISOString()
+        });
     });
 }
 
-module.exports = { handleConnection, devices, setMqttForwarders };
+module.exports = { 
+    handleConnection, 
+    devices, 
+    setMqttForwarders,
+    handleAdminConnection,
+    broadcastDeviceUpdates
+};
