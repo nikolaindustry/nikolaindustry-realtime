@@ -23,13 +23,13 @@ This server now supports both **WebSocket** and **MQTT** protocols for device co
 ### WebSocket Devices
 Connect via WebSocket with device ID in query parameter:
 ```
-ws://localhost:3000/?id=device-123
+ws://nikolaindustry-realtime.onrender.com/?id=device-123
 ```
 
 ### MQTT Devices
 Connect to MQTT broker and subscribe to command topic:
 ```
-MQTT Broker: mqtt://localhost:1883
+MQTT Broker: mqtt://nikolaindustry-realtime.onrender.com:1883
 Subscribe to: device/{deviceId}/commands
 ```
 
@@ -176,7 +176,7 @@ All existing HTTP endpoints now support both WebSocket and MQTT devices:
 
 ### Get MQTT Broker Statistics
 ```http
-GET /api/mqtt/stats
+GET https://nikolaindustry-realtime.onrender.com/api/mqtt/stats
 ```
 **Response:**
 ```json
@@ -191,7 +191,7 @@ GET /api/mqtt/stats
 
 ### Publish to MQTT Topic Directly
 ```http
-POST /api/mqtt/publish
+POST https://nikolaindustry-realtime.onrender.com/api/mqtt/publish
 Content-Type: application/json
 
 {
@@ -302,10 +302,10 @@ void loop() {
 
 ## Port Configuration
 
-- **HTTP Server**: Port 3000 (or PORT environment variable)
-- **WebSocket**: Same as HTTP server (ws://localhost:3000)
-- **MQTT TCP**: Port 1883 (or MQTT_PORT environment variable)
-- **MQTT over WebSocket**: Port 8883 (or MQTT_WS_PORT environment variable)
+- **HTTP Server**: Port 3000 (nikolaindustry-realtime.onrender.com)
+- **WebSocket**: Same as HTTP server (ws://nikolaindustry-realtime.onrender.com)
+- **MQTT TCP**: Port 1883 (mqtt://nikolaindustry-realtime.onrender.com:1883)
+- **MQTT over WebSocket**: Port 8883 (wss://nikolaindustry-realtime.onrender.com:8883)
 
 ## Running the Server
 
@@ -322,8 +322,8 @@ npm start
 3. The server will start all protocols:
 ```
 🚀 Server running on port 3000
-🔌 WebSocket available at ws://localhost:3000
-🌐 HTTP API available at http://localhost:3000/api
+🔌 WebSocket available at ws://nikolaindustry-realtime.onrender.com
+🌐 HTTP API available at https://nikolaindustry-realtime.onrender.com/api
 🦟 MQTT Server running on port 1883
 🦟 MQTT over WebSocket running on port 8883
 ```
