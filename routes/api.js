@@ -229,14 +229,70 @@ router.get('/test-info', (req, res) => {
 // Get MQTT broker stats
 router.get('/mqtt/stats', (req, res) => {
     try {
-        const { aedes } = require('../utils/mqtt');
+        const { aedes, mqttDevices } = require('../utils/mqtt');
+        
+        // Initialize stats with default values
+        let stats = {
+            clients: 0,
+            registeredDevices: 0,
+            subscriptions: 0
+        };
+        
+        const clients = [];
+        
+        // Get detailed client information with proper null checks
+        if (aedes) {
+            // Check clients
+            if (aedes.clients) {
+                try {
+                    // Make sure it's an object before trying to get entries
+                    if (typeof aedes.clients === 'object' && !Array.isArray(aedes.clients) && aedes.clients !== null) {
+                        // Get the keys safely
+                        const clientKeys = Object.keys(aedes.clients);
+                        stats.clients = clientKeys.length;
+                        
+                        // Process each client
+                        for (const clientId of clientKeys) {
+                            // Access the client safely
+                            const client = aedes.clients[clientId];
+                            if (client) {
+                                clients.push({
+                                    id: clientId,
+                                    connected: true,
+                                    // Add more client details if available
+                                    info: {
+                                        id: client.id,
+                                        // Add other available client properties
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing MQTT clients:', error);
+                }
+            }
+            
+            // Check subscriptions
+            if (aedes.subscriptions) {
+                try {
+                    // Make sure it's an object before trying to get keys
+                    if (typeof aedes.subscriptions === 'object' && !Array.isArray(aedes.subscriptions) && aedes.subscriptions !== null) {
+                        stats.subscriptions = Object.keys(aedes.subscriptions).length;
+                    }
+                } catch (error) {
+                    console.error('Error counting subscriptions:', error);
+                }
+            }
+        }
+        
+        // Get registered device count
+        stats.registeredDevices = mqttDevices ? mqttDevices.size : 0;
         
         res.json({
             success: true,
-            stats: {
-                clients: Object.keys(aedes.clients).length,
-                subscriptions: Object.keys(aedes.subscriptions).length
-            }
+            stats: stats,
+            clients: clients
         });
     } catch (error) {
         console.error('Error getting MQTT stats:', error);
