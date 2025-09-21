@@ -7,6 +7,9 @@ const { devices: wsDevices } = require('./websocket');
 // MQTT devices storage (similar to WebSocket devices)
 const mqttDevices = new Map();
 
+// MQTT topics storage
+const mqttTopics = new Map(); // topic -> { subscribers: Set(), lastMessage: timestamp, messageCount: number }
+
 // Combined devices function to get all devices (WebSocket + MQTT)
 function getAllDevices() {
     const allDevices = new Map();
@@ -154,19 +157,35 @@ function forwardWebSocketToMqtt(fromDeviceId, targetId, payload) {
 // Get MQTT topic information
 function getMqttTopics() {
     const topics = [];
-    for (const [topic, subscriptions] of Object.entries(aedes.subscriptions)) {
+    
+    mqttTopics.forEach((info, topic) => {
         topics.push({
             topic: topic,
-            subscribers: subscriptions.length,
-            lastMessage: 'N/A' // Would need to track this separately
+            subscriberCount: info.subscribers.size,
+            lastMessage: info.lastMessage || null,
+            messageCount: info.messageCount || 0
         });
-    }
+    });
+    
+    // Sort by subscriber count (descending) then by topic name
+    topics.sort((a, b) => {
+        if (b.subscriberCount !== a.subscriberCount) {
+            return b.subscriberCount - a.subscriberCount;
+        }
+        return a.topic.localeCompare(b.topic);
+    });
+    
     return topics;
 }
 
 // MQTT Event Handlers
 aedes.on('client', (client) => {
     console.log(`🔗 MQTT Client ${client.id} connected`);
+    
+    // Register all connected clients as MQTT devices
+    // This ensures that even clients that don't subscribe to command topics are tracked
+    mqttDevices.set(client.id, client);
+    console.log(`✅ MQTT Device ${client.id} registered (connected)`);
 });
 
 aedes.on('clientDisconnect', (client) => {
@@ -174,6 +193,17 @@ aedes.on('clientDisconnect', (client) => {
     
     // Remove from devices map
     mqttDevices.delete(client.id);
+    
+    // Remove client from all topic subscriptions
+    mqttTopics.forEach((info, topic) => {
+        if (info.subscribers.has(client.id)) {
+            info.subscribers.delete(client.id);
+            // Clean up empty topics
+            if (info.subscribers.size === 0) {
+                mqttTopics.delete(topic);
+            }
+        }
+    });
 });
 
 aedes.on('subscribe', (subscriptions, client) => {
@@ -183,8 +213,36 @@ aedes.on('subscribe', (subscriptions, client) => {
     const commandSubscription = subscriptions.find(s => s.topic.startsWith(`device/${client.id}/commands`));
     if (commandSubscription) {
         mqttDevices.set(client.id, client);
-        console.log(`✅ MQTT Device ${client.id} registered`);
+        console.log(`✅ MQTT Device ${client.id} registered (subscribed to command topic)`);
     }
+    
+    // Track topic subscriptions
+    subscriptions.forEach(sub => {
+        const topic = sub.topic;
+        if (!mqttTopics.has(topic)) {
+            mqttTopics.set(topic, {
+                subscribers: new Set(),
+                messageCount: 0
+            });
+        }
+        mqttTopics.get(topic).subscribers.add(client.id);
+    });
+});
+
+aedes.on('unsubscribe', (unsubscriptions, client) => {
+    console.log(`🔇 MQTT Client ${client.id} unsubscribed from:`, unsubscriptions);
+    
+    // Remove client from topic subscriptions
+    unsubscriptions.forEach(topic => {
+        if (mqttTopics.has(topic)) {
+            const info = mqttTopics.get(topic);
+            info.subscribers.delete(client.id);
+            // Clean up empty topics
+            if (info.subscribers.size === 0) {
+                mqttTopics.delete(topic);
+            }
+        }
+    });
 });
 
 aedes.on('publish', (packet, client) => {
@@ -197,6 +255,18 @@ aedes.on('publish', (packet, client) => {
     if (topic.startsWith('$SYS/')) return;
     
     console.log(`📩 MQTT Message from ${client.id} on topic ${topic}:`, payload);
+    
+    // Update topic information
+    if (!mqttTopics.has(topic)) {
+        mqttTopics.set(topic, {
+            subscribers: new Set(),
+            messageCount: 0
+        });
+    }
+    
+    const topicInfo = mqttTopics.get(topic);
+    topicInfo.lastMessage = new Date().toISOString();
+    topicInfo.messageCount = (topicInfo.messageCount || 0) + 1;
     
     try {
         // Handle different topic patterns
