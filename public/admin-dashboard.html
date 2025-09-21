@@ -348,18 +348,20 @@
                 <div class="section">
                     <div class="section-header">
                         <h2>MQTT Topics</h2>
+                        <button class="refresh-btn" onclick="loadMqttStats()">Refresh</button>
                     </div>
                     <table>
                         <thead>
                             <tr>
                                 <th>Topic</th>
                                 <th>Subscribers</th>
-                                <th>Last Message</th>
+                                <th>Messages</th>
+                                <th>Last Activity</th>
                             </tr>
                         </thead>
                         <tbody id="mqtt-topics-body">
                             <tr>
-                                <td colspan="3" style="text-align: center; color: var(--text-secondary);">Topic information not available</td>
+                                <td colspan="4" style="text-align: center; color: var(--text-secondary);">Loading topics...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -500,15 +502,43 @@
         // Load MQTT statistics
         async function loadMqttStats() {
             try {
-                const response = await fetch(`${BASE_URL}/api/mqtt/stats`);
-                const data = await response.json();
+                // Load MQTT stats
+                const statsResponse = await fetch(`${BASE_URL}/api/mqtt/stats`);
+                const statsData = await statsResponse.json();
                 
-                if (data.success) {
-                    document.getElementById('mqtt-clients').textContent = data.stats.clients || 0;
-                    document.getElementById('mqtt-subscriptions').textContent = data.stats.subscriptions || 0;
+                if (statsData.success) {
+                    document.getElementById('mqtt-clients').textContent = statsData.stats.clients || 0;
+                    document.getElementById('mqtt-subscriptions').textContent = statsData.stats.subscriptions || 0;
+                }
+                
+                // Load MQTT topics
+                const topicsResponse = await fetch(`${BASE_URL}/api/mqtt/topics`);
+                const topicsData = await topicsResponse.json();
+                
+                if (topicsData.success) {
+                    const tbody = document.getElementById('mqtt-topics-body');
+                    if (topicsData.topics && topicsData.topics.length > 0) {
+                        tbody.innerHTML = topicsData.topics.map(topic => {
+                            const lastActivity = topic.lastMessage 
+                                ? new Date(topic.lastMessage).toLocaleTimeString() 
+                                : 'No activity';
+                            return `
+                                <tr>
+                                    <td>${topic.topic}</td>
+                                    <td>${topic.subscriberCount}</td>
+                                    <td>${topic.messageCount}</td>
+                                    <td>${lastActivity}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No active topics</td></tr>';
+                    }
                 }
             } catch (error) {
                 console.error('Error loading MQTT stats:', error);
+                document.getElementById('mqtt-topics-body').innerHTML = 
+                    '<tr><td colspan="4" style="text-align: center; color: var(--danger-color);">Error loading topics</td></tr>';
             }
         }
 
