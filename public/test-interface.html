@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol Communication Tester - NIKOLAINDUSTRY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .logs-panel {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 25px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #339af0 0%, #228be6 100%);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #51cf66; }
+        .status-offline { background: #ff6b6b; }
+        .status-connecting { background: #ffd43b; }
+
+        .device-list {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .device-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .protocol-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: white;
+            margin-left: 5px;
+        }
+
+        .protocol-websocket { background: #339af0; }
+        .protocol-mqtt { background: #51cf66; }
+        .protocol-hybrid { background: #fd7e14; }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .log-info { color: #00ff00; }
+        .log-success { color: #00ff88; }
+        .log-error { color: #ff4444; }
+        .log-warning { color: #ffaa00; }
+
+        .json-input {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            border: 1px solid #555;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Protocol Communication Tester</h1>
+            <p>Test all HTTP, WebSocket, and MQTT communication combinations</p>
+        </div>
+
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-indicator status-offline"></span>
+            Disconnected
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <!-- WebSocket Connection -->
+                <div class="section">
+                    <h3>🔌 WebSocket Connection</h3>
+                    <div class="form-group">
+                        <label for="deviceId">Your Device ID:</label>
+                        <input type="text" id="deviceId" value="web-tester-001" placeholder="Enter your device ID">
+                    </div>
+                    <button class="btn" onclick="connectWebSocket()">Connect WebSocket</button>
+                    <button class="btn btn-danger" onclick="disconnectWebSocket()">Disconnect</button>
+                </div>
+
+                <!-- Connected Devices -->
+                <div class="section">
+                    <h3>📱 Connected Devices</h3>
+                    <button class="btn btn-info" onclick="refreshDevices()">Refresh Devices</button>
+                    <div class="device-list" id="deviceList">
+                        <div style="text-align: center; color: #666;">Click refresh to load devices</div>
+                    </div>
+                </div>
+
+                <!-- HTTP API Tests -->
+                <div class="section">
+                    <h3>🌐 HTTP API Tests</h3>
+                    <div class="form-group">
+                        <label for="httpTargetDevice">Target Device ID:</label>
+                        <input type="text" id="httpTargetDevice" placeholder="esp32-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="httpPayload">Payload (JSON):</label>
+                        <textarea id="httpPayload" class="json-input" placeholder='{"command": "TURN_ON", "pin": 2}'></textarea>
+                    </div>
+                    <button class="btn" onclick="sendHttpMessage()">Send HTTP → Device</button>
+                    <button class="btn btn-success" onclick="sendHttpBroadcast()">HTTP Broadcast</button>
+                    <button class="btn btn-info" onclick="sendHttpBatch()">HTTP Batch</button>
+                </div>
+
+                <!-- WebSocket Tests -->
+                <div class="section">
+                    <h3>⚡ WebSocket Tests</h3>
+                    <div class="form-group">
+                        <label for="wsTargetDevice">Target Device ID:</label>
+                        <input type="text" id="wsTargetDevice" placeholder="esp32-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="wsPayload">Payload (JSON):</label>
+                        <textarea id="wsPayload" class="json-input" placeholder='{"command": "READ_SENSOR", "pin": 36}'></textarea>
+                    </div>
+                    <button class="btn" onclick="sendWebSocketMessage()">Send WebSocket → Device</button>
+                    <button class="btn btn-success" onclick="sendWebSocketBroadcast()">WebSocket Broadcast</button>
+                    <button class="btn btn-info" onclick="sendWebSocketBatch()">WebSocket Batch</button>
+                </div>
+
+                <!-- MQTT Direct Publish -->
+                <div class="section">
+                    <h3>📡 MQTT Direct Publish</h3>
+                    <div class="form-group">
+                        <label for="mqttTopic">MQTT Topic:</label>
+                        <input type="text" id="mqttTopic" placeholder="device/esp32-001/commands">
+                    </div>
+                    <div class="form-group">
+                        <label for="mqttPayload">Payload (JSON):</label>
+                        <textarea id="mqttPayload" class="json-input" placeholder='{"command": "START_PUMP", "duration": 30}'></textarea>
+                    </div>
+                    <button class="btn" onclick="publishMqttDirect()">Publish to MQTT Topic</button>
+                    <button class="btn btn-info" onclick="getMqttStats()">Get MQTT Stats</button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="section">
+                    <h3>⚡ Quick Test Actions</h3>
+                    <button class="btn btn-success" onclick="emergencyStop()">🛑 Emergency Stop All</button>
+                    <button class="btn btn-info" onclick="testAllProtocols()">🔄 Test All Protocols</button>
+                    <button class="btn" onclick="clearLogs()">🗑️ Clear Logs</button>
+                </div>
+            </div>
+
+            <div class="logs-panel">
+                <h3 style="color: #00ff88; margin-bottom: 15px;">📊 Communication Logs</h3>
+                <div id="logs">
+                    <div class="log-info">Ready to test communication protocols...</div>
+                    <div class="log-info">Connect WebSocket to start testing</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let ws = null;
+        let isConnected = false;
+        const baseUrl = 'https://nikolaindustry-realtime.onrender.com';
+        const wsUrl = 'wss://nikolaindustry-realtime.onrender.com';
+
+        // Logging functions
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        // Connection status
+        function updateConnectionStatus(status, message) {
+            const statusEl = document.getElementById('connectionStatus');
+            const indicator = statusEl.querySelector('.span.status-indicator') || statusEl.querySelector('.status-indicator');
+            
+            indicator.className = `status-indicator status-${status}`;
+            statusEl.innerHTML = `<span class="status-indicator status-${status}"></span>${message}`;
+        }
+
+        // WebSocket functions
+        function connectWebSocket() {
+            const deviceId = document.getElementById('deviceId').value;
+            if (!deviceId) {
+                log('Please enter a device ID', 'error');
+                return;
+            }
+
+            try {
+                updateConnectionStatus('connecting', 'Connecting...');
+                ws = new WebSocket(`${wsUrl}/?id=${deviceId}`);
+                
+                ws.onopen = function() {
+                    isConnected = true;
+                    updateConnectionStatus('online', 'Connected via WebSocket');
+                    log(`✅ WebSocket connected as device: ${deviceId}`, 'success');
+                };
+                
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📨 Received WebSocket message: ${JSON.stringify(data, null, 2)}`, 'info');
+                    } catch (e) {
+                        log(`📨 Received WebSocket message: ${event.data}`, 'info');
+                    }
+                };
+                
+                ws.onclose = function() {
+                    isConnected = false;
+                    updateConnectionStatus('offline', 'Disconnected');
+                    log('❌ WebSocket disconnected', 'warning');
+                };
+                
+                ws.onerror = function(error) {
+                    log(`❌ WebSocket error: ${error}`, 'error');
+                    updateConnectionStatus('offline', 'Connection Error');
+                };
+            } catch (error) {
+                log(`❌ Failed to connect WebSocket: ${error}`, 'error');
+                updateConnectionStatus('offline', 'Connection Failed');
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                isConnected = false;
+                updateConnectionStatus('offline', 'Disconnected');
+                log('WebSocket disconnected manually', 'info');
+            }
+        }
+
+        // HTTP API functions
+        async function makeHttpRequest(url, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                log(`🌐 HTTP ${method} ${url}`, 'info');
+                if (body) log(`📤 Request body: ${JSON.stringify(body, null, 2)}`, 'info');
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ HTTP Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`❌ HTTP Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+                
+                return data;
+            } catch (error) {
+                log(`❌ HTTP Request failed: ${error}`, 'error');
+                return null;
+            }
+        }
+
+        async function refreshDevices() {
+            const data = await makeHttpRequest(`${baseUrl}/api/devices`);
+            if (data && data.devices) {
+                const deviceList = document.getElementById('deviceList');
+                deviceList.innerHTML = '';
+                
+                data.devices.forEach(device => {
+                    const deviceEl = document.createElement('div');
+                    deviceEl.className = 'device-item';
+                    
+                    const protocols = device.protocols.map(p => 
+                        `<span class="protocol-badge protocol-${p}">${p.toUpperCase()}</span>`
+                    ).join('');
+                    
+                    deviceEl.innerHTML = `
+                        <div>
+                            <span class="status-indicator status-${device.status}"></span>
+                            ${device.deviceId}
+                        </div>
+                        <div>
+                            ${protocols}
+                            <small>(${device.connections} conn)</small>
+                        </div>
+                    `;
+                    deviceList.appendChild(deviceEl);
+                });
+                
+                log(`📱 Found ${data.devices.length} connected devices`, 'info');
+            }
+        }
+
+        async function sendHttpMessage() {
+            const targetDevice = document.getElementById('httpTargetDevice').value;
+            const payload = document.getElementById('httpPayload').value;
+            
+            if (!targetDevice || !payload) {
+                log('Please enter target device and payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                await makeHttpRequest(`${baseUrl}/api/send/${targetDevice}`, 'POST', {
+                    payload: payloadObj
+                });
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        async function sendHttpBroadcast() {
+            const payload = document.getElementById('httpPayload').value;
+            
+            if (!payload) {
+                log('Please enter payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                await makeHttpRequest(`${baseUrl}/api/broadcast`, 'POST', {
+                    payload: payloadObj
+                });
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        async function sendHttpBatch() {
+            const targetDevice = document.getElementById('httpTargetDevice').value;
+            const payload = document.getElementById('httpPayload').value;
+            
+            if (!targetDevice || !payload) {
+                log('Please enter target device and payload for batch test', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                await makeHttpRequest(`${baseUrl}/api/batch`, 'POST', {
+                    commands: [
+                        { deviceId: targetDevice, payload: payloadObj },
+                        { deviceId: targetDevice + '-test', payload: { command: 'TEST' } }
+                    ]
+                });
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        // WebSocket message functions
+        function sendWebSocketMessage() {
+            if (!isConnected) {
+                log('WebSocket not connected', 'error');
+                return;
+            }
+            
+            const targetDevice = document.getElementById('wsTargetDevice').value;
+            const payload = document.getElementById('wsPayload').value;
+            
+            if (!targetDevice || !payload) {
+                log('Please enter target device and payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                const message = {
+                    targetId: targetDevice,
+                    payload: payloadObj
+                };
+                
+                ws.send(JSON.stringify(message));
+                log(`📤 WebSocket message sent: ${JSON.stringify(message, null, 2)}`, 'info');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        function sendWebSocketBroadcast() {
+            if (!isConnected) {
+                log('WebSocket not connected', 'error');
+                return;
+            }
+            
+            const payload = document.getElementById('wsPayload').value;
+            
+            if (!payload) {
+                log('Please enter payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                const message = {
+                    type: 'broadcast',
+                    payload: payloadObj
+                };
+                
+                ws.send(JSON.stringify(message));
+                log(`📤 WebSocket broadcast sent: ${JSON.stringify(message, null, 2)}`, 'info');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        function sendWebSocketBatch() {
+            if (!isConnected) {
+                log('WebSocket not connected', 'error');
+                return;
+            }
+            
+            const targetDevice = document.getElementById('wsTargetDevice').value;
+            const payload = document.getElementById('wsPayload').value;
+            
+            if (!targetDevice || !payload) {
+                log('Please enter target device and payload for batch test', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                const message = {
+                    controlData: [
+                        { targetId: targetDevice, payload: payloadObj },
+                        { targetId: targetDevice + '-test', payload: { command: 'TEST' } }
+                    ]
+                };
+                
+                ws.send(JSON.stringify(message));
+                log(`📤 WebSocket batch sent: ${JSON.stringify(message, null, 2)}`, 'info');
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        // MQTT functions
+        async function publishMqttDirect() {
+            const topic = document.getElementById('mqttTopic').value;
+            const payload = document.getElementById('mqttPayload').value;
+            
+            if (!topic || !payload) {
+                log('Please enter MQTT topic and payload', 'error');
+                return;
+            }
+            
+            try {
+                const payloadObj = JSON.parse(payload);
+                await makeHttpRequest(`${baseUrl}/api/mqtt/publish`, 'POST', {
+                    topic: topic,
+                    payload: payloadObj,
+                    qos: 1,
+                    retain: false
+                });
+            } catch (e) {
+                log('Invalid JSON payload', 'error');
+            }
+        }
+
+        async function getMqttStats() {
+            await makeHttpRequest(`${baseUrl}/api/mqtt/stats`);
+        }
+
+        // Quick actions
+        async function emergencyStop() {
+            // Send via HTTP
+            await makeHttpRequest(`${baseUrl}/api/broadcast`, 'POST', {
+                payload: { command: 'EMERGENCY_STOP', priority: 'CRITICAL' }
+            });
+            
+            // Send via WebSocket if connected
+            if (isConnected) {
+                const message = {
+                    type: 'broadcast',
+                    payload: { command: 'EMERGENCY_STOP', priority: 'CRITICAL' }
+                };
+                ws.send(JSON.stringify(message));
+                log('🛑 Emergency stop sent via WebSocket', 'warning');
+            }
+            
+            log('🛑 Emergency stop broadcast to all devices!', 'warning');
+        }
+
+        async function testAllProtocols() {
+            log('🔄 Starting comprehensive protocol test...', 'info');
+            
+            // Test HTTP
+            await makeHttpRequest(`${baseUrl}/api/devices`);
+            
+            // Test WebSocket if connected
+            if (isConnected) {
+                const testMessage = {
+                    type: 'getConnectedDevices'
+                };
+                ws.send(JSON.stringify(testMessage));
+                log('⚡ WebSocket test message sent', 'info');
+            }
+            
+            // Test MQTT
+            await makeHttpRequest(`${baseUrl}/api/mqtt/stats`);
+            
+            log('✅ Protocol tests completed', 'success');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Protocol Communication Tester loaded', 'success');
+            log('Ready to test all communication combinations!', 'info');
+            refreshDevices();
+        });
+
+        // Auto-refresh devices every 30 seconds
+        setInterval(refreshDevices, 30000);
+    </script>
+</body>
+</html>
