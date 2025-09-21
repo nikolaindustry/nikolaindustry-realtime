@@ -1,13 +1,14 @@
 const express = require('express');
 const WebSocket = require('ws');
 const { devices } = require('../utils/websocket');
+const { getAllDevices, sendToDevice, broadcastToAll } = require('../utils/mqtt');
 
 const router = express.Router();
 
 // Middleware to parse JSON
 router.use(express.json());
 
-// Send message to specific device
+// Send message to specific device (WebSocket + MQTT)
 router.post('/send/:deviceId', (req, res) => {
     const { deviceId } = req.params;
     const { payload } = req.body;
@@ -20,30 +21,19 @@ router.post('/send/:deviceId', (req, res) => {
         return res.status(400).json({ error: 'Payload is required' });
     }
 
-    if (!devices.has(deviceId)) {
-        return res.status(404).json({ error: `Device ${deviceId} not found or not connected` });
-    }
-
     try {
-        const deviceConnections = devices.get(deviceId);
-        let sentCount = 0;
-
-        deviceConnections.forEach((socket) => {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ from: 'api', payload }));
-                sentCount++;
-            }
-        });
-
-        if (sentCount === 0) {
-            return res.status(503).json({ error: `Device ${deviceId} has no active connections` });
+        const result = sendToDevice(deviceId, payload, 'api');
+        
+        if (!result.sent) {
+            return res.status(404).json({ error: `Device ${deviceId} not found or not connected` });
         }
 
-        console.log(`🚀 API sent message to ${deviceId}:`, JSON.stringify(payload));
+        console.log(`🚀 API sent message to ${deviceId} via ${result.protocols.join(', ')}:`, JSON.stringify(payload));
         res.json({ 
             success: true, 
             message: `Message sent to device ${deviceId}`,
-            connections: sentCount
+            connections: result.connections,
+            protocols: result.protocols
         });
     } catch (error) {
         console.error('Error sending message:', error);
@@ -51,7 +41,7 @@ router.post('/send/:deviceId', (req, res) => {
     }
 });
 
-// Send message to multiple devices
+// Send message to multiple devices (WebSocket + MQTT)
 router.post('/send-multiple', (req, res) => {
     const { deviceIds, payload } = req.body;
 
@@ -67,22 +57,18 @@ router.post('/send-multiple', (req, res) => {
     let totalSent = 0;
 
     deviceIds.forEach((deviceId) => {
-        if (devices.has(deviceId)) {
-            const deviceConnections = devices.get(deviceId);
-            let sentCount = 0;
-
-            deviceConnections.forEach((socket) => {
-                if (socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify({ from: 'api', payload }));
-                    sentCount++;
-                    totalSent++;
-                }
+        const result = sendToDevice(deviceId, payload, 'api');
+        if (result.sent) {
+            totalSent += result.connections;
+            results.push({ 
+                deviceId, 
+                status: 'sent', 
+                connections: result.connections,
+                protocols: result.protocols
             });
-
-            results.push({ deviceId, status: 'sent', connections: sentCount });
-            console.log(`🚀 API sent message to ${deviceId}:`, JSON.stringify(payload));
+            console.log(`🚀 API sent message to ${deviceId} via ${result.protocols.join(', ')}:`, JSON.stringify(payload));
         } else {
-            results.push({ deviceId, status: 'not_found', connections: 0 });
+            results.push({ deviceId, status: 'not_found', connections: 0, protocols: [] });
         }
     });
 
@@ -94,7 +80,7 @@ router.post('/send-multiple', (req, res) => {
     });
 });
 
-// Broadcast message to all connected devices
+// Broadcast message to all connected devices (WebSocket + MQTT)
 router.post('/broadcast', (req, res) => {
     const { payload } = req.body;
 
@@ -102,28 +88,20 @@ router.post('/broadcast', (req, res) => {
         return res.status(400).json({ error: 'Payload is required' });
     }
 
-    let totalSent = 0;
-    const deviceResults = [];
+    try {
+        const result = broadcastToAll(payload, 'api_broadcast');
 
-    devices.forEach((connections, deviceId) => {
-        let sentCount = 0;
-        connections.forEach((socket) => {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ from: 'api_broadcast', payload }));
-                sentCount++;
-                totalSent++;
-            }
+        console.log(`📢 API broadcast message to all devices:`, JSON.stringify(payload));
+        res.json({
+            success: true,
+            message: `Broadcast sent to all connected devices`,
+            totalSent: result.totalSent,
+            devices: result.deviceResults
         });
-        deviceResults.push({ deviceId, connections: sentCount });
-    });
-
-    console.log(`📢 API broadcast message to all devices:`, JSON.stringify(payload));
-    res.json({
-        success: true,
-        message: `Broadcast sent to all connected devices`,
-        totalSent,
-        devices: deviceResults
-    });
+    } catch (error) {
+        console.error('Error broadcasting message:', error);
+        res.status(500).json({ error: 'Failed to broadcast message' });
+    }
 });
 
 // Send batch commands (like the existing WebSocket controlData feature)
@@ -143,22 +121,18 @@ router.post('/batch', (req, res) => {
             return;
         }
 
-        if (devices.has(deviceId)) {
-            const deviceConnections = devices.get(deviceId);
-            let sentCount = 0;
-
-            deviceConnections.forEach((socket) => {
-                if (socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify({ from: 'api_batch', payload }));
-                    sentCount++;
-                    totalSent++;
-                }
+        const result = sendToDevice(deviceId, payload, 'api_batch');
+        if (result.sent) {
+            totalSent += result.connections;
+            results.push({ 
+                deviceId, 
+                status: 'sent', 
+                connections: result.connections,
+                protocols: result.protocols
             });
-
-            results.push({ deviceId, status: 'sent', connections: sentCount });
-            console.log(`🚀 API batch sent to ${deviceId}:`, JSON.stringify(payload));
+            console.log(`🚀 API batch sent to ${deviceId} via ${result.protocols.join(', ')}:`, JSON.stringify(payload));
         } else {
-            results.push({ deviceId, status: 'not_found', connections: 0 });
+            results.push({ deviceId, status: 'not_found', connections: 0, protocols: [] });
         }
     });
 
@@ -170,48 +144,112 @@ router.post('/batch', (req, res) => {
     });
 });
 
-// Get list of connected devices
+// Get list of connected devices (WebSocket + MQTT)
 router.get('/devices', (req, res) => {
-    const connectedDevices = [];
-    
-    devices.forEach((connections, deviceId) => {
-        const activeConnections = connections.filter(socket => socket.readyState === WebSocket.OPEN).length;
-        connectedDevices.push({
-            deviceId,
-            connections: activeConnections,
-            status: activeConnections > 0 ? 'online' : 'offline'
+    try {
+        const allDevices = getAllDevices();
+        const connectedDevices = [];
+        
+        allDevices.forEach((deviceInfo, deviceId) => {
+            connectedDevices.push({
+                deviceId,
+                type: deviceInfo.type, // 'websocket', 'mqtt', or 'hybrid'
+                connections: deviceInfo.activeConnections || deviceInfo.connections,
+                status: (deviceInfo.activeConnections || deviceInfo.connections) > 0 ? 'online' : 'offline',
+                protocols: deviceInfo.type === 'hybrid' ? ['websocket', 'mqtt'] : [deviceInfo.type]
+            });
         });
-    });
 
-    res.json({
-        success: true,
-        totalDevices: connectedDevices.length,
-        devices: connectedDevices
-    });
+        res.json({
+            success: true,
+            totalDevices: connectedDevices.length,
+            devices: connectedDevices
+        });
+    } catch (error) {
+        console.error('Error getting devices:', error);
+        res.status(500).json({ error: 'Failed to get devices list' });
+    }
 });
 
-// Get specific device status
+// Get specific device status (WebSocket + MQTT)
 router.get('/devices/:deviceId', (req, res) => {
     const { deviceId } = req.params;
 
-    if (!devices.has(deviceId)) {
-        return res.status(404).json({ error: `Device ${deviceId} not found` });
+    try {
+        const allDevices = getAllDevices();
+        
+        if (!allDevices.has(deviceId)) {
+            return res.status(404).json({ error: `Device ${deviceId} not found` });
+        }
+
+        const deviceInfo = allDevices.get(deviceId);
+        
+        res.json({
+            success: true,
+            deviceId,
+            type: deviceInfo.type,
+            connections: deviceInfo.activeConnections || deviceInfo.connections,
+            status: (deviceInfo.activeConnections || deviceInfo.connections) > 0 ? 'online' : 'offline',
+            protocols: deviceInfo.type === 'hybrid' ? ['websocket', 'mqtt'] : [deviceInfo.type]
+        });
+    } catch (error) {
+        console.error('Error getting device status:', error);
+        res.status(500).json({ error: 'Failed to get device status' });
     }
-
-    const connections = devices.get(deviceId);
-    const activeConnections = connections.filter(socket => socket.readyState === WebSocket.OPEN).length;
-
-    res.json({
-        success: true,
-        deviceId,
-        connections: activeConnections,
-        status: activeConnections > 0 ? 'online' : 'offline'
-    });
 });
 
 // Health check endpoint
 router.get('/health', (req, res) => {
     res.json({ status: 'up', timestamp: new Date().toISOString() });
+});
+
+// MQTT specific endpoints
+
+// Get MQTT broker stats
+router.get('/mqtt/stats', (req, res) => {
+    try {
+        const { aedes } = require('../utils/mqtt');
+        
+        res.json({
+            success: true,
+            stats: {
+                clients: Object.keys(aedes.clients).length,
+                subscriptions: Object.keys(aedes.subscriptions).length
+            }
+        });
+    } catch (error) {
+        console.error('Error getting MQTT stats:', error);
+        res.status(500).json({ error: 'Failed to get MQTT stats' });
+    }
+});
+
+// Publish to MQTT topic directly
+router.post('/mqtt/publish', (req, res) => {
+    const { topic, payload, qos = 1, retain = false } = req.body;
+    
+    if (!topic || !payload) {
+        return res.status(400).json({ error: 'topic and payload are required' });
+    }
+    
+    try {
+        const { aedes } = require('../utils/mqtt');
+        
+        aedes.publish({
+            topic,
+            payload: Buffer.from(JSON.stringify(payload)),
+            qos: parseInt(qos),
+            retain: Boolean(retain)
+        });
+        
+        console.log(`📡 Published to MQTT topic ${topic}:`, payload);
+        res.json({
+            success: true,
+            message: `Published to topic ${topic}`
+        });
+    } catch (error) {
+        console.error('Error publishing to MQTT:', error);
+        res.status(500).json({ error: 'Failed to publish to MQTT' });
+    }
 });
 
 module.exports = router;
