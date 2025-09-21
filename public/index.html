@@ -10,16 +10,91 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        
+        .header .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .header .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        
+        .header .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
         iframe {
             width: 100%;
-            height: 100%;
+            height: 100vh;
             border: none;
+            margin-top: 70px;
+        }
+        
+        .test-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            z-index: 1001;
+            transition: all 0.3s;
+        }
+        
+        .test-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
         }
     </style>
 </head>
 <body>
-    <iframe src="https://nikolaindustry.wixstudio.com/hyperwisor-v2" title="Full-Screen Webpage"></iframe>
+    <div class="header">
+        <h1>🚀 NIKOLAINDUSTRY-NETWORK</h1>
+        <div class="nav-links">
+            <a href="/test-interface.html" target="_blank">🧪 Protocol Tester</a>
+            <a href="/api/devices" target="_blank">📱 Device API</a>
+            <a href="https://github.com/nikolaindustry" target="_blank">📚 Documentation</a>
+        </div>
+    </div>
+    
+    <iframe src="https://nikolaindustry.wixstudio.com/hyperwisor-v2" title="NIKOLAINDUSTRY Control Panel"></iframe>
+    
+    <a href="/test-interface.html" class="test-badge" target="_blank">
+        🧪 Test All Protocols
+    </a>
 </body>
 </html>
