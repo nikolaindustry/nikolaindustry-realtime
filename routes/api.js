@@ -203,6 +203,27 @@ router.get('/health', (req, res) => {
     res.json({ status: 'up', timestamp: new Date().toISOString() });
 });
 
+// Test interface info
+router.get('/test-info', (req, res) => {
+    res.json({
+        success: true,
+        testInterface: '/test-interface.html',
+        supportedProtocols: ['HTTP', 'WebSocket', 'MQTT'],
+        availableEndpoints: {
+            devices: '/api/devices',
+            send: '/api/send/:deviceId',
+            broadcast: '/api/broadcast',
+            batch: '/api/batch',
+            mqtt: {
+                stats: '/api/mqtt/stats',
+                publish: '/api/mqtt/publish'
+            }
+        },
+        websocketUrl: 'wss://nikolaindustry-realtime.onrender.com',
+        mqttBroker: 'mqtt://nikolaindustry-realtime.onrender.com:1883'
+    });
+});
+
 // MQTT specific endpoints
 
 // Get MQTT broker stats
