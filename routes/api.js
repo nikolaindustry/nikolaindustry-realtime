@@ -325,7 +325,7 @@ router.post('/mqtt/publish', (req, res) => {
     }
     
     try {
-        const { aedes } = require('../utils/mqtt');
+        const { aedes, trackPublishedTopic } = require('../utils/mqtt');
         
         aedes.publish({
             topic,
@@ -333,6 +333,9 @@ router.post('/mqtt/publish', (req, res) => {
             qos: parseInt(qos),
             retain: Boolean(retain)
         });
+        
+        // Track the published topic
+        trackPublishedTopic(topic, payload);
         
         console.log(`📡 Published to MQTT topic ${topic}:`, payload);
         res.json({
@@ -342,6 +345,105 @@ router.post('/mqtt/publish', (req, res) => {
     } catch (error) {
         console.error('Error publishing to MQTT:', error);
         res.status(500).json({ error: 'Failed to publish to MQTT' });
+    }
+});
+
+// Enhanced HTTP to MQTT publishing with parameters
+router.post('/mqtt/publish-device', (req, res) => {
+    const { deviceId, command, topic, payload, qos = 1, retain = false } = req.body;
+    
+    if (!deviceId) {
+        return res.status(400).json({ error: 'deviceId is required' });
+    }
+    
+    if (!payload) {
+        return res.status(400).json({ error: 'payload is required' });
+    }
+    
+    try {
+        const { aedes, trackPublishedTopic } = require('../utils/mqtt');
+        
+        // Default topic if not provided
+        const targetTopic = topic || `device/${deviceId}/commands`;
+        
+        // Create message with additional parameters
+        const message = {
+            deviceId,
+            command: command || 'data',
+            payload,
+            timestamp: new Date().toISOString(),
+            source: 'http-api'
+        };
+        
+        aedes.publish({
+            topic: targetTopic,
+            payload: Buffer.from(JSON.stringify(message)),
+            qos: parseInt(qos),
+            retain: Boolean(retain)
+        });
+        
+        // Track the published topic
+        trackPublishedTopic(targetTopic, message);
+        
+        console.log(`📡 HTTP->MQTT Published to device ${deviceId} on topic ${targetTopic}:`, message);
+        res.json({
+            success: true,
+            message: `Published to device ${deviceId}`,
+            topic: targetTopic,
+            deviceId,
+            command: command || 'data'
+        });
+    } catch (error) {
+        console.error('Error publishing to MQTT device:', error);
+        res.status(500).json({ error: 'Failed to publish to MQTT device' });
+    }
+});
+
+// Send data to specific MQTT topic with custom parameters
+router.post('/mqtt/topic/*', (req, res) => {
+    const topicName = req.params[0]; // Get the full topic path
+    const { payload, qos = 1, retain = false, metadata = {} } = req.body;
+    
+    if (!topicName) {
+        return res.status(400).json({ error: 'topic name is required' });
+    }
+    
+    if (!payload) {
+        return res.status(400).json({ error: 'payload is required' });
+    }
+    
+    try {
+        const { aedes, trackPublishedTopic } = require('../utils/mqtt');
+        
+        // Create enhanced message with metadata
+        const message = {
+            payload,
+            metadata: {
+                timestamp: new Date().toISOString(),
+                source: 'http-api',
+                ...metadata
+            }
+        };
+        
+        aedes.publish({
+            topic: topicName,
+            payload: Buffer.from(JSON.stringify(message)),
+            qos: parseInt(qos),
+            retain: Boolean(retain)
+        });
+        
+        // Track the published topic
+        trackPublishedTopic(topicName, message);
+        
+        console.log(`📡 HTTP->MQTT Published to topic ${topicName}:`, message);
+        res.json({
+            success: true,
+            message: `Published to topic ${topicName}`,
+            topic: topicName
+        });
+    } catch (error) {
+        console.error('Error publishing to MQTT topic:', error);
+        res.status(500).json({ error: 'Failed to publish to MQTT topic' });
     }
 });
 
