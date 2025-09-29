@@ -178,6 +178,22 @@ function getMqttTopics() {
     return topics;
 }
 
+// Function to manually track published topics (for API-initiated publishes)
+function trackPublishedTopic(topic, message) {
+    if (!mqttTopics.has(topic)) {
+        mqttTopics.set(topic, {
+            subscribers: new Set(),
+            messageCount: 0
+        });
+    }
+    
+    const topicInfo = mqttTopics.get(topic);
+    topicInfo.lastMessage = new Date().toISOString();
+    topicInfo.messageCount = (topicInfo.messageCount || 0) + 1;
+    
+    console.log(`📊 Topic ${topic} tracked: ${topicInfo.messageCount} messages, ${topicInfo.subscribers.size} subscribers`);
+}
+
 // MQTT Event Handlers
 aedes.on('client', (client) => {
     console.log(`🔗 MQTT Client ${client.id} connected`);
@@ -363,5 +379,6 @@ module.exports = {
     forwardWebSocketToMqtt,
     mqttDevices,
     aedes,
-    getMqttTopics
+    getMqttTopics,
+    trackPublishedTopic
 };
