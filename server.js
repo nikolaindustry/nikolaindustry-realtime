@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const WebSocket = require('ws');
-const { handleConnection, setMqttForwarders, handleAdminConnection } = require('./utils/websocket');
+const { handleConnection, setMqttForwarders, handleAdminConnection, startHeartbeat } = require('./utils/websocket');
 const { setupMQTT, forwardWebSocketToMqtt, broadcastToAll } = require('./utils/mqtt');
 const apiRoutes = require('./routes/api');
 
@@ -25,6 +25,10 @@ wss.on('connection', (ws, req) => {
         handleConnection(ws, req);
     }
 });
+
+// Start WebSocket heartbeat mechanism to detect zombie connections
+// This pings all clients every 30 seconds and terminates unresponsive ones
+startHeartbeat(wss);
 
 // Setup MQTT
 setupMQTT(server);
