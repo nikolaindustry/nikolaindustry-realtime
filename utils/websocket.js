@@ -7,6 +7,10 @@ const adminConnections = new Set(); // Store admin dashboard connections
 let forwardWebSocketToMqtt = null;
 let broadcastToAllProtocols = null;
 
+// Heartbeat configuration
+const HEARTBEAT_INTERVAL = 30000; // Ping every 30 seconds
+const CLIENT_TIMEOUT = 35000; // Consider dead if no pong in 35 seconds
+
 // Set MQTT forwarding functions (called from server.js after mqtt is initialized)
 function setMqttForwarders(forwardFn, broadcastFn) {
     forwardWebSocketToMqtt = forwardFn;
@@ -16,6 +20,11 @@ function setMqttForwarders(forwardFn, broadcastFn) {
 // Handle admin dashboard connections
 function handleAdminConnection(ws) {
     adminConnections.add(ws);
+    ws.isAlive = true;
+    
+    ws.on('pong', () => {
+        ws.isAlive = true;
+    });
     
     ws.on('close', () => {
         adminConnections.delete(ws);
@@ -40,6 +49,24 @@ function broadcastDeviceUpdates(updateData) {
     });
 }
 
+// Cleanup helper function
+function cleanupConnection(ws, deviceId) {
+    if (!deviceId) return;
+    
+    const connections = devices.get(deviceId) || [];
+    const index = connections.indexOf(ws);
+    if (index !== -1) connections.splice(index, 1);
+    if (connections.length === 0) {
+        devices.delete(deviceId);
+    }
+    
+    broadcastDeviceUpdates({
+        event: 'deviceDisconnected',
+        deviceId: deviceId,
+        timestamp: new Date().toISOString()
+    });
+}
+
 function handleConnection(ws, req) {
     const params = new URLSearchParams(req.url.split('?')[1]);
     const deviceId = params.get('id');
@@ -51,6 +78,16 @@ function handleConnection(ws, req) {
     }
 
     console.log(`✅ Device ${deviceId} connected`);
+
+    // Mark connection as alive and store deviceId for heartbeat cleanup
+    ws.isAlive = true;
+    ws.deviceId = deviceId;
+
+    // Handle pong responses from client
+    ws.on('pong', () => {
+        ws.isAlive = true;
+        // Uncomment for debug: console.log(`📡 Pong received from ${deviceId}`);
+    });
 
     if (!devices.has(deviceId)) {
         devices.set(deviceId, []);
@@ -65,6 +102,9 @@ function handleConnection(ws, req) {
     });
 
     ws.on('message', (message) => {
+        // Reset alive status on any message received
+        ws.isAlive = true;
+        
         let decodedMessages;
     
         try {
@@ -168,20 +208,47 @@ function handleConnection(ws, req) {
 
     ws.on('close', () => {
         console.log(`❌ Device ${deviceId} disconnected`);
-        const connections = devices.get(deviceId) || [];
-        const index = connections.indexOf(ws);
-        if (index !== -1) connections.splice(index, 1);
-        if (connections.length === 0) {
-            devices.delete(deviceId);
-        }
-        
-        // Notify admin dashboards of disconnection
-        broadcastDeviceUpdates({
-            event: 'deviceDisconnected',
-            deviceId: deviceId,
-            timestamp: new Date().toISOString()
-        });
+        cleanupConnection(ws, deviceId);
     });
+
+    ws.on('error', (err) => {
+        console.error(`❌ WebSocket error for ${deviceId}:`, err.message);
+        cleanupConnection(ws, deviceId);
+    });
+}
+
+// Heartbeat function - call this with your WebSocket server instance
+// Usage: startHeartbeat(wss) after creating WebSocket.Server
+function startHeartbeat(wss) {
+    const interval = setInterval(() => {
+        wss.clients.forEach((ws) => {
+            if (ws.isAlive === false) {
+                console.log(`💀 Terminating zombie connection: ${ws.deviceId || 'unknown'}`);
+                cleanupConnection(ws, ws.deviceId);
+                return ws.terminate();
+            }
+
+            ws.isAlive = false;
+            ws.ping(); // Send ping, expect pong response
+        });
+    }, HEARTBEAT_INTERVAL);
+
+    // Clean up interval when server closes
+    wss.on('close', () => {
+        clearInterval(interval);
+    });
+
+    console.log(`💓 Heartbeat started (interval: ${HEARTBEAT_INTERVAL}ms)`);
+}
+
+// Get connected device count
+function getConnectedDeviceCount() {
+    return devices.size;
+}
+
+// Get all connected device IDs
+function getConnectedDeviceIds() {
+    return Array.from(devices.keys());
 }
 
 module.exports = { 
@@ -189,5 +256,8 @@ module.exports = {
     devices, 
     setMqttForwarders,
     handleAdminConnection,
-    broadcastDeviceUpdates
+    broadcastDeviceUpdates,
+    startHeartbeat,
+    getConnectedDeviceCount,
+    getConnectedDeviceIds
 };
